@@ -8,17 +8,23 @@ This package provides a ROS 2 launch file to initialize and configure the OAK-D-
 
 ## Installation
 
-1. Clone the repository and add it to your ROS 2 workspace:
+1. Execute the below command to install the required dependencies:
+    ```bash
+    sudo wget -qO- https://docs.luxonis.com/install_dependencies.sh | bash
+    ```
+    Please refer to [Installation documentation](https://docs.luxonis.com/software/depthai/manual-install#supported-platforms) if any issues occur.
+
+2. Clone the repository and add it to your ROS 2 workspace:
     ```bash
     git clone https://github.com/jmguerreroh/oak_d_lite_camera_ros2.git
     ```
 
-2. Install dependencies:
+3. Install dependencies:
     ```bash
     rosdep install --from-paths src --ignore-src -r -y
     ```
 
-3. Build the workspace:
+4. Build the workspace:
     ```bash
     colcon build --symlink-install
     ```
