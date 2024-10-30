@@ -28,7 +28,8 @@ This package provides a ROS 2 launch file to initialize and configure the OAK-D-
 To launch the OAK-D-LITE camera node with default parameters:
 
 ```bash
-ros2 launch oak_d_lite_camera_ros2_launcher oak_d_lite_camera.launch.py
+ros2 launch oak_d_lite_camera_ros2 rgbd_stereo.launch.py
+
 ```
 
 ## Launch Arguments
