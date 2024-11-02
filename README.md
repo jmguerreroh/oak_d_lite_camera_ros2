@@ -56,17 +56,21 @@ The launch file provides several configurable arguments:
 
 #### Depth Processing Parameters
 
-- `mode`: Depth processing mode (`depth` or `disparity`). Default: `depth`
-- `lrcheck`: Left-right consistency check. Default: `True`
+- `lrcheck`: Enable left-right consistency check. Default: `True`
 - `extended`: Enable extended disparity range. Default: `False`
 - `subpixel`: Enable subpixel accuracy. Default: `True`
-- `confidence`: Confidence threshold for depth estimation. Default: `200`
-- `LRchecktresh`: Left-right consistency threshold. Default: `5`
+- `confidence`: Set confidence threshold for depth estimation. Default: `200`
+- `LRchecktresh`: Set left-right consistency threshold. Default: `5`
+- `use_rviz`: Launch RViz for visualization. Default: `True`
+- `use_depth`: Enable depth image publishing. Default: `True`
+- `use_disparity`: Enable disparity image publishing. Default: `True`
+- `use_lr_raw`: Enable left and right raw image publishing. Default: `True`
+- `use_pointcloud`: Enable point cloud publishing. Default: `True`
+- `pc_color`: Use color in the point cloud. Options: `True`for color or `False` for intensity. Default: `True`
 
 ## Visualizing in RViz
 
 The launch file opens RViz with a pre-configured view. You can modify `rviz/rgbd_stereo_pcl.rviz` to customize the visualization.
-
 
 ## About
 

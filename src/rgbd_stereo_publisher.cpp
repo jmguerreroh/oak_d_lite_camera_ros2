@@ -21,11 +21,12 @@
 #include "depthai_bridge/ImageConverter.hpp"
 #include "depthai/pipeline/node/ColorCamera.hpp"
 
+std::vector<std::string> usbStrings = {"UNKNOWN", "LOW", "FULL", "HIGH", "SUPER", "SUPER_PLUS"};
+
 // Function to configure and create the DepthAI pipeline
 std::tuple<dai::Pipeline, int, int, int, int> createPipeline(
-  bool withDepth, bool lrcheck, bool extended, bool subpixel, int confidence, int LRchecktresh)
+  bool lrcheck, bool extended, bool subpixel, int confidence, int LRchecktresh)
 {
-
   dai::Pipeline pipeline; // Creates the processing pipeline
   pipeline.setXLinkChunkSize(0); // Disables chunk size for XLink transfer
   dai::node::MonoCamera::Properties::SensorResolution monoResolution =
@@ -34,7 +35,7 @@ std::tuple<dai::Pipeline, int, int, int, int> createPipeline(
     dai::ColorCameraProperties::SensorResolution::THE_1080_P;
   int stereoWidth = 640, stereoHeight = 480, rgbWidth = 1920, rgbHeight = 1080;
 
-// Creates nodes for mono cameras, RGB, and XLink output connections
+  // Creates nodes for mono cameras, RGB, and XLink output connections
   auto monoLeft = pipeline.create<dai::node::MonoCamera>();
   auto monoRight = pipeline.create<dai::node::MonoCamera>();
   auto xoutLeft = pipeline.create<dai::node::XLinkOut>();
@@ -43,21 +44,18 @@ std::tuple<dai::Pipeline, int, int, int, int> createPipeline(
   auto xoutRightRect = pipeline.create<dai::node::XLinkOut>();
   auto stereo = pipeline.create<dai::node::StereoDepth>();
   auto xoutDepth = pipeline.create<dai::node::XLinkOut>();
+  auto xoutDepthDisp = pipeline.create<dai::node::XLinkOut>();
   auto rgbCam = pipeline.create<dai::node::ColorCamera>();
   auto xoutRgb = pipeline.create<dai::node::XLinkOut>();
 
-// Configures stream names for outputs
+  // Configures stream names for outputs
   xoutLeft->setStreamName("left");
   xoutRight->setStreamName("right");
   xoutRgb->setStreamName("rgb");
   xoutLeftRect->setStreamName("left_rect");
   xoutRightRect->setStreamName("right_rect");
-
-  if(withDepth) {
-    xoutDepth->setStreamName("depth"); // Sets depth output stream
-  } else {
-    xoutDepth->setStreamName("disparity"); // Sets disparity output stream
-  }
+  xoutDepth->setStreamName("depth");
+  xoutDepthDisp->setStreamName("disparity");
 
   // Mono camera configuration (left and right)
   monoLeft->setResolution(monoResolution);
@@ -74,7 +72,7 @@ std::tuple<dai::Pipeline, int, int, int, int> createPipeline(
   stereo->setLeftRightCheck(lrcheck); // Enable/disable left-right check
   stereo->setExtendedDisparity(extended); // Enable extended disparity
   stereo->setSubpixel(subpixel); // Enable subpixel mode
-  if(withDepth) {stereo->setDepthAlign(dai::CameraBoardSocket::CAM_A);}
+  stereo->setDepthAlign(dai::CameraBoardSocket::CAM_A); // Align depth to RGB camera
 
   // RGB camera configuration
   rgbCam->setBoardSocket(dai::CameraBoardSocket::CAM_A);
@@ -96,11 +94,8 @@ std::tuple<dai::Pipeline, int, int, int, int> createPipeline(
   stereo->rectifiedRight.link(xoutRightRect->input);
 
   // Set depth or disparity output depending on mode
-  if(withDepth) {
-    stereo->depth.link(xoutDepth->input);
-  } else {
-    stereo->disparity.link(xoutDepth->input);
-  }
+  stereo->depth.link(xoutDepth->input);
+  stereo->disparity.link(xoutDepthDisp->input);
 
   // Returns the pipeline and configured dimensions
   return std::make_tuple(pipeline, stereoWidth, stereoHeight, rgbWidth, rgbHeight);
@@ -112,61 +107,80 @@ int main(int argc, char ** argv)
   auto node = rclcpp::Node::make_shared("rgbd_stereo_node"); // Creates a ROS node
 
   // Declare and get ROS parameters
-  std::string tfPrefix, mode;
-  bool lrcheck, extended, subpixel, enableDepth;
+  std::string tfPrefix;
+  bool lrcheck, extended, subpixel, use_depth, use_disparity, use_lr_raw, pc_color;
   int confidence, LRchecktresh;
   int monoWidth, monoHeight, colorWidth, colorHeight;
   dai::Pipeline pipeline;
 
   node->declare_parameter("tf_prefix", "oak");
-  node->declare_parameter("mode", "depth");
   node->declare_parameter("lrcheck", true);
   node->declare_parameter("extended", false);
   node->declare_parameter("subpixel", true);
   node->declare_parameter("confidence", 200);
   node->declare_parameter("LRchecktresh", 5);
+  node->declare_parameter("use_depth", true);
+  node->declare_parameter("use_disparity", true);
+  node->declare_parameter("use_lr_raw", true);
+  node->declare_parameter("pc_color", true);
 
   node->get_parameter("tf_prefix", tfPrefix);
-  node->get_parameter("mode", mode);
   node->get_parameter("lrcheck", lrcheck);
   node->get_parameter("extended", extended);
   node->get_parameter("subpixel", subpixel);
   node->get_parameter("confidence", confidence);
   node->get_parameter("LRchecktresh", LRchecktresh);
-
-  // Enable depth or disparity mode based on `mode` parameter
-  if(mode == "depth") {
-    enableDepth = true;
-  } else {
-    enableDepth = false;
-  }
+  node->get_parameter("use_depth", use_depth);
+  node->get_parameter("use_disparity", use_disparity);
+  node->get_parameter("use_lr_raw", use_lr_raw);
+  node->get_parameter("pc_color", pc_color);
 
   // Creates the pipeline with specified parameters
   std::tie(pipeline, monoWidth, monoHeight, colorWidth, colorHeight) = createPipeline(
-        enableDepth, lrcheck, extended, subpixel, confidence, LRchecktresh);
+        lrcheck, extended, subpixel, confidence, LRchecktresh);
 
   // Initialize DepthAI device with configured pipeline
   dai::Device device(pipeline);
+  auto calibrationHandler = device.readCalibration();
+  RCLCPP_INFO(node->get_logger(), "Device USB status: %s",
+    usbStrings[static_cast<int32_t>(device.getUsbSpeed())].c_str());
+
+  // Creates output queues for left, right, left rectified, right rectified, depth, and disparity images
   auto leftQueue = device.getOutputQueue("left", 30, false);
   auto rightQueue = device.getOutputQueue("right", 30, false);
-  auto rgbQueue = device.getOutputQueue("rgb", 30, false);
   auto leftRectQueue = device.getOutputQueue("left_rect", 30, false);
   auto rightRectQueue = device.getOutputQueue("right_rect", 30, false);
+  auto stereoQueue = device.getOutputQueue("depth", 30, false);
+  auto stereoQueueDisp = device.getOutputQueue("disparity", 30, false);
 
-  // Output queue for depth or disparity, depending on mode
-  std::shared_ptr<dai::DataOutputQueue> stereoQueue;
-  if(enableDepth) {
-    stereoQueue = device.getOutputQueue("depth", 30, false);
-  } else {
-    stereoQueue = device.getOutputQueue("disparity", 30, false);
-  }
+  // Creates publishers for RGB, left, right, left rectified, right rectified, depth, and disparity images
+  std::unique_ptr<dai::rosBridge::BridgePublisher<sensor_msgs::msg::Image,
+    dai::ImgFrame>> rgbPublish, leftPublish, rightPublish, leftRectPublish, rightRectPublish,
+    depthPublish;
+  std::unique_ptr<dai::rosBridge::BridgePublisher<stereo_msgs::msg::DisparityImage,
+    dai::ImgFrame>> dispPublish;
 
-  // Converts and publishes image data to ROS
-  auto calibrationHandler = device.readCalibration();
+  // Creates image converters for RGB, left, right, and depth images
   dai::rosBridge::ImageConverter rgbConverter(tfPrefix + "_rgb_camera_optical_frame", false);
+  dai::rosBridge::ImageConverter leftConverter(tfPrefix + "_left_camera_optical_frame", true);
+  dai::rosBridge::ImageConverter rightConverter(tfPrefix + "_right_camera_optical_frame", true);
+  dai::rosBridge::ImageConverter depthConverter = pc_color ? rgbConverter : rightConverter;
+  dai::rosBridge::DisparityConverter dispConverter(tfPrefix + "_right_camera_optical_frame", 880,
+    7.5, 20, 2000);
+
+  // Creates camera info for RGB, left, right, and depth images
   auto rgbCameraInfo = rgbConverter.calibrationToCameraInfo(calibrationHandler,
     dai::CameraBoardSocket::CAM_A, colorWidth, colorHeight);
-  dai::rosBridge::BridgePublisher<sensor_msgs::msg::Image, dai::ImgFrame> rgbPublish(
+  auto leftCameraInfo = leftConverter.calibrationToCameraInfo(calibrationHandler,
+    dai::CameraBoardSocket::CAM_B, monoWidth, monoHeight);
+  auto rightCameraInfo = leftConverter.calibrationToCameraInfo(calibrationHandler,
+    dai::CameraBoardSocket::CAM_C, monoWidth, monoHeight);
+  auto depthCameraInfo = pc_color ? rgbCameraInfo : rightCameraInfo;
+
+  // Converts and publishes RGB images to ROS
+  auto rgbQueue = device.getOutputQueue("rgb", 30, false);
+  rgbPublish = std::make_unique<dai::rosBridge::BridgePublisher<sensor_msgs::msg::Image,
+      dai::ImgFrame>>(
     rgbQueue,
     node,
     std::string("rgb/image"),
@@ -179,86 +193,92 @@ int main(int argc, char ** argv)
     rgbCameraInfo,
     "rgb");
 
-  rgbPublish.addPublisherCallback(); // addPublisherCallback works only when the dataqueue is non blocking.
+  rgbPublish->addPublisherCallback(); // addPublisherCallback works only when the dataqueue is non blocking.
 
-  dai::rosBridge::ImageConverter leftconverter(tfPrefix + "_left_camera_optical_frame", true);
-  auto leftCameraInfo = leftconverter.calibrationToCameraInfo(calibrationHandler,
-    dai::CameraBoardSocket::CAM_B, monoWidth, monoHeight);
-  dai::rosBridge::BridgePublisher<sensor_msgs::msg::Image, dai::ImgFrame> leftPublish(
-    leftQueue,
-    node,
-    std::string("left/image"),
-    std::bind(&dai::rosBridge::ImageConverter::toRosMsg, &leftconverter, std::placeholders::_1,
-              std::placeholders::_2),
-    30,
-    leftCameraInfo,
-    "left");
+  if (use_lr_raw) {
+    // Converts and publishes left and right images to ROS
+    leftPublish = std::make_unique<dai::rosBridge::BridgePublisher<sensor_msgs::msg::Image,
+        dai::ImgFrame>>(
+      leftQueue,
+      node,
+      std::string("left/image"),
+      std::bind(&dai::rosBridge::ImageConverter::toRosMsg, &leftConverter, std::placeholders::_1,
+                std::placeholders::_2),
+      30,
+      leftCameraInfo,
+      "left");
 
-  leftPublish.addPublisherCallback();
+    leftPublish->addPublisherCallback();
 
-  dai::rosBridge::ImageConverter rightconverter(tfPrefix + "_right_camera_optical_frame", true);
-  auto rightCameraInfo = leftconverter.calibrationToCameraInfo(calibrationHandler,
-    dai::CameraBoardSocket::CAM_C, monoWidth, monoHeight);
 
-  dai::rosBridge::BridgePublisher<sensor_msgs::msg::Image, dai::ImgFrame> rightPublish(
-    rightQueue,
-    node,
-    std::string("right/image"),
-    std::bind(&dai::rosBridge::ImageConverter::toRosMsg, &rightconverter, std::placeholders::_1,
-              std::placeholders::_2),
-    30,
-    rightCameraInfo,
-    "right");
+    rightPublish = std::make_unique<dai::rosBridge::BridgePublisher<sensor_msgs::msg::Image,
+        dai::ImgFrame>>(
+      rightQueue,
+      node,
+      std::string("right/image"),
+      std::bind(&dai::rosBridge::ImageConverter::toRosMsg, &rightConverter, std::placeholders::_1,
+                std::placeholders::_2),
+      30,
+      rightCameraInfo,
+      "right");
 
-  rightPublish.addPublisherCallback();
+    rightPublish->addPublisherCallback();
+  }
 
-  dai::rosBridge::BridgePublisher<sensor_msgs::msg::Image, dai::ImgFrame> leftRectPublish(
-    leftRectQueue,
-    node,
-    std::string("left_rect/image"),
-    std::bind(&dai::rosBridge::ImageConverter::toRosMsg, &leftconverter, std::placeholders::_1,
-              std::placeholders::_2),
-    30,
-    leftCameraInfo,
-    "left_rect");
+  if (use_depth || use_disparity) {
+    // Converts and publishes rectified left and right images to ROS
+    leftRectPublish = std::make_unique<dai::rosBridge::BridgePublisher<sensor_msgs::msg::Image,
+        dai::ImgFrame>>(
+      leftRectQueue,
+      node,
+      std::string("left_rect/image"),
+      std::bind(&dai::rosBridge::ImageConverter::toRosMsg, &leftConverter, std::placeholders::_1,
+                std::placeholders::_2),
+      30,
+      leftCameraInfo,
+      "left_rect");
 
-  leftRectPublish.addPublisherCallback();
+    leftRectPublish->addPublisherCallback();
 
-  dai::rosBridge::BridgePublisher<sensor_msgs::msg::Image, dai::ImgFrame> rightRectPublish(
-    rightRectQueue,
-    node,
-    std::string("right_rect/image"),
-    std::bind(&dai::rosBridge::ImageConverter::toRosMsg, &rightconverter, std::placeholders::_1,
-              std::placeholders::_2),
-    30,
-    rightCameraInfo,
-    "right_rect");
 
-  rightRectPublish.addPublisherCallback();
+    rightRectPublish = std::make_unique<dai::rosBridge::BridgePublisher<sensor_msgs::msg::Image,
+        dai::ImgFrame>>(
+      rightRectQueue,
+      node,
+      std::string("right_rect/image"),
+      std::bind(&dai::rosBridge::ImageConverter::toRosMsg, &rightConverter, std::placeholders::_1,
+                std::placeholders::_2),
+      30,
+      rightCameraInfo,
+      "right_rect");
 
-  // Converts and publishes depth or disparity images to ROS
-  if(mode == "depth") {
-    auto depthCameraInfo = enableDepth ? rgbCameraInfo : rightCameraInfo;
-    auto depthconverter = enableDepth ? rgbConverter : rightconverter;
-    dai::rosBridge::BridgePublisher<sensor_msgs::msg::Image, dai::ImgFrame> depthPublish(
+    rightRectPublish->addPublisherCallback();
+  }
+
+  if (use_depth) {
+    // Converts and publishes depth image to ROS
+    depthPublish = std::make_unique<dai::rosBridge::BridgePublisher<sensor_msgs::msg::Image,
+        dai::ImgFrame>>(
       stereoQueue,
       node,
       std::string("stereo/depth"),
       std::bind(&dai::rosBridge::ImageConverter::toRosMsg,
-                      &depthconverter,  // since the converter has the same frame name
+                      &depthConverter,  // since the converter has the same frame name
                                         // and image type is also same we can reuse it
                       std::placeholders::_1,
                       std::placeholders::_2),
       30,
       depthCameraInfo,
       "stereo");
-    depthPublish.addPublisherCallback();
-    rclcpp::spin(node);
-  } else {
-    dai::rosBridge::DisparityConverter dispConverter(tfPrefix + "_right_camera_optical_frame", 880,
-      7.5, 20, 2000);
-    dai::rosBridge::BridgePublisher<stereo_msgs::msg::DisparityImage, dai::ImgFrame> dispPublish(
-      stereoQueue,
+
+    depthPublish->addPublisherCallback();
+  }
+
+  if (use_disparity) {
+    // Converts and publishes disparity image to ROS
+    dispPublish = std::make_unique<dai::rosBridge::BridgePublisher<stereo_msgs::msg::DisparityImage,
+        dai::ImgFrame>>(
+      stereoQueueDisp,
       node,
       std::string("stereo/disparity"),
       std::bind(&dai::rosBridge::DisparityConverter::toRosMsg, &dispConverter,
@@ -266,9 +286,13 @@ int main(int argc, char ** argv)
       30,
       rightCameraInfo,
       "stereo");
-    dispPublish.addPublisherCallback();
-    rclcpp::spin(node);
+
+    dispPublish->addPublisherCallback();
   }
+
+  // Spins the node
+  rclcpp::spin(node);
+  rclcpp::shutdown();
 
   return 0;
 }
