@@ -25,54 +25,33 @@ std::vector<std::string> usbStrings = {"UNKNOWN", "LOW", "FULL", "HIGH", "SUPER"
 
 // Function to configure and create the DepthAI pipeline
 std::tuple<dai::Pipeline, int, int, int, int> createPipeline(
-  bool lrcheck, bool extended, bool subpixel, int confidence, int LRchecktresh)
+  bool lrcheck, bool extended, bool subpixel, int confidence, int LRchecktresh, bool use_depth,
+  bool use_disparity, bool use_lr_raw)
 {
-  dai::Pipeline pipeline; // Creates the processing pipeline
-  pipeline.setXLinkChunkSize(0); // Disables chunk size for XLink transfer
+  // Creates the processing pipeline
+  dai::Pipeline pipeline;
+
+  // Disables chunk size for XLink transfer
+  pipeline.setXLinkChunkSize(0);
+
+  // Sets the resolution for the mono cameras and RGB camera
   dai::node::MonoCamera::Properties::SensorResolution monoResolution =
     dai::node::MonoCamera::Properties::SensorResolution::THE_480_P;
   dai::ColorCameraProperties::SensorResolution colorResolution =
     dai::ColorCameraProperties::SensorResolution::THE_1080_P;
   int stereoWidth = 640, stereoHeight = 480, rgbWidth = 1920, rgbHeight = 1080;
 
-  // Creates nodes for mono cameras, RGB, and XLink output connections
-  auto monoLeft = pipeline.create<dai::node::MonoCamera>();
-  auto monoRight = pipeline.create<dai::node::MonoCamera>();
-  auto xoutLeft = pipeline.create<dai::node::XLinkOut>();
-  auto xoutRight = pipeline.create<dai::node::XLinkOut>();
-  auto xoutLeftRect = pipeline.create<dai::node::XLinkOut>();
-  auto xoutRightRect = pipeline.create<dai::node::XLinkOut>();
-  auto stereo = pipeline.create<dai::node::StereoDepth>();
-  auto xoutDepth = pipeline.create<dai::node::XLinkOut>();
-  auto xoutDepthDisp = pipeline.create<dai::node::XLinkOut>();
-  auto rgbCam = pipeline.create<dai::node::ColorCamera>();
-  auto xoutRgb = pipeline.create<dai::node::XLinkOut>();
 
-  // Configures stream names for outputs
-  xoutLeft->setStreamName("left");
-  xoutRight->setStreamName("right");
+  // ------------------------------
+  // RGB Camera
+  // ------------------------------
+
+  // Creates node for RGB camera and XLink output connection
+  std::shared_ptr<dai::node::ColorCamera> rgbCam = pipeline.create<dai::node::ColorCamera>();
+  std::shared_ptr<dai::node::XLinkOut> xoutRgb = pipeline.create<dai::node::XLinkOut>();
+
+  // Configures stream names for RGB output
   xoutRgb->setStreamName("rgb");
-  xoutLeftRect->setStreamName("left_rect");
-  xoutRightRect->setStreamName("right_rect");
-  xoutDepth->setStreamName("depth");
-  xoutDepthDisp->setStreamName("disparity");
-
-  // Mono camera configuration (left and right)
-  monoLeft->setResolution(monoResolution);
-  monoLeft->setBoardSocket(dai::CameraBoardSocket::CAM_B); // Sets camera socket
-  monoLeft->setFps(40);   // Sets FPS
-  monoRight->setResolution(monoResolution);
-  monoRight->setBoardSocket(dai::CameraBoardSocket::CAM_C);
-  monoRight->setFps(40);
-
-  // Stereo depth node configuration
-  stereo->initialConfig.setConfidenceThreshold(confidence); // Confidence threshold
-  stereo->setRectifyEdgeFillColor(0); // Black edge fill color for better cropping view
-  stereo->initialConfig.setLeftRightCheckThreshold(LRchecktresh);
-  stereo->setLeftRightCheck(lrcheck); // Enable/disable left-right check
-  stereo->setExtendedDisparity(extended); // Enable extended disparity
-  stereo->setSubpixel(subpixel); // Enable subpixel mode
-  stereo->setDepthAlign(dai::CameraBoardSocket::CAM_A); // Align depth to RGB camera
 
   // RGB camera configuration
   rgbCam->setBoardSocket(dai::CameraBoardSocket::CAM_A);
@@ -80,22 +59,99 @@ std::tuple<dai::Pipeline, int, int, int, int> createPipeline(
   rgbCam->setColorOrder(dai::ColorCameraProperties::ColorOrder::BGR);
   rgbCam->setFps(35);
 
-  // Link mono cameras to stereo depth node
-  monoLeft->out.link(stereo->left);
-  monoRight->out.link(stereo->right);
-
   // Link RGB camera to its XLink output
   rgbCam->video.link(xoutRgb->input);
 
-  // Link mono cameras to both rectified and unrectified outputs
-  stereo->syncedLeft.link(xoutLeft->input);
-  stereo->syncedRight.link(xoutRight->input);
-  stereo->rectifiedLeft.link(xoutLeftRect->input);
-  stereo->rectifiedRight.link(xoutRightRect->input);
 
-  // Set depth or disparity output depending on mode
-  stereo->depth.link(xoutDepth->input);
-  stereo->disparity.link(xoutDepthDisp->input);
+  // ------------------------------
+  // Mono Cameras and Stereo Depth
+  // ------------------------------
+
+  std::shared_ptr<dai::node::MonoCamera> monoLeft, monoRight;
+  std::shared_ptr<dai::node::XLinkOut> xoutLeft, xoutRight, xoutLeftRect, xoutRightRect;
+
+  std::shared_ptr<dai::node::StereoDepth> stereo;
+  std::shared_ptr<dai::node::XLinkOut> xoutDepth, xoutDepthDisp;
+
+  if (use_depth || use_disparity || use_lr_raw) {
+    // Creates nodes for left and right mono cameras and stereo depth
+    monoLeft = pipeline.create<dai::node::MonoCamera>();  // Left mono camera
+    monoRight = pipeline.create<dai::node::MonoCamera>(); // Right mono camera
+    stereo = pipeline.create<dai::node::StereoDepth>();   // Stereo depth node
+
+    // Creates XLink output connections for left and right rectified images
+    xoutLeftRect = pipeline.create<dai::node::XLinkOut>();
+    xoutRightRect = pipeline.create<dai::node::XLinkOut>();
+
+    // Configures stream names for output connections
+    xoutLeftRect->setStreamName("left_rect");
+    xoutRightRect->setStreamName("right_rect");
+
+    // Mono camera configuration (left and right)
+    monoLeft->setResolution(monoResolution);
+    monoLeft->setBoardSocket(dai::CameraBoardSocket::CAM_B); // Sets camera socket
+    monoLeft->setFps(40);   // Sets FPS
+    monoRight->setResolution(monoResolution);
+    monoRight->setBoardSocket(dai::CameraBoardSocket::CAM_C);
+    monoRight->setFps(40);
+
+    // Stereo depth node configuration
+    stereo->initialConfig.setConfidenceThreshold(confidence); // Confidence threshold
+    stereo->setRectifyEdgeFillColor(0); // Black edge fill color for better cropping view
+    stereo->initialConfig.setLeftRightCheckThreshold(LRchecktresh);
+    stereo->setLeftRightCheck(lrcheck); // Enable/disable left-right check
+    stereo->setExtendedDisparity(extended); // Enable extended disparity
+    stereo->setSubpixel(subpixel); // Enable subpixel mode
+    stereo->setDepthAlign(dai::CameraBoardSocket::CAM_A); // Align depth to RGB camera
+
+    // Link mono cameras to stereo depth node
+    monoLeft->out.link(stereo->left);
+    monoRight->out.link(stereo->right);
+
+    // Link mono cameras to rectified outputs
+    stereo->rectifiedLeft.link(xoutLeftRect->input);
+    stereo->rectifiedRight.link(xoutRightRect->input);
+  }
+
+  // If using left and right raw images
+  if (use_lr_raw) {
+    // Creates XLink output connections for left and right raw images
+    xoutLeft = pipeline.create<dai::node::XLinkOut>();
+    xoutRight = pipeline.create<dai::node::XLinkOut>();
+
+    // Configures stream names for output connections
+    xoutLeft->setStreamName("left");
+    xoutRight->setStreamName("right");
+
+    // Link mono cameras to unrectified outputs (synced)
+    stereo->syncedLeft.link(xoutLeft->input);
+    stereo->syncedRight.link(xoutRight->input);
+
+    std::cout << "Using left and right raw images" << std::endl;
+  }
+
+  // If using depth images
+  if (use_depth) {
+    // Creates XLink output connection for depth images
+    xoutDepth = pipeline.create<dai::node::XLinkOut>();
+    xoutDepth->setStreamName("depth");
+
+    // Links stereo depth node to depth output
+    stereo->depth.link(xoutDepth->input);
+    std::cout << "Using depth images" << std::endl;
+  }
+
+  // If using disparity images
+  if (use_disparity) {
+    // Creates XLink output connection for disparity images
+    xoutDepthDisp = pipeline.create<dai::node::XLinkOut>();
+    xoutDepthDisp->setStreamName("disparity");
+
+    // Links stereo depth node to disparity output
+    stereo->disparity.link(xoutDepthDisp->input);
+
+    std::cout << "Using disparity images" << std::endl;
+  }
 
   // Returns the pipeline and configured dimensions
   return std::make_tuple(pipeline, stereoWidth, stereoHeight, rgbWidth, rgbHeight);
@@ -108,10 +164,10 @@ int main(int argc, char ** argv)
 
   // Declare and get ROS parameters
   std::string tfPrefix;
-  bool lrcheck, extended, subpixel, use_depth, use_disparity, use_lr_raw, pc_color;
+  bool lrcheck, extended, subpixel, use_depth, use_disparity, use_lr_raw, pc_color, only_rgb,
+    use_pointcloud;
   int confidence, LRchecktresh;
   int monoWidth, monoHeight, colorWidth, colorHeight;
-  dai::Pipeline pipeline;
 
   node->declare_parameter("tf_prefix", "oak");
   node->declare_parameter("lrcheck", true);
@@ -123,6 +179,8 @@ int main(int argc, char ** argv)
   node->declare_parameter("use_disparity", true);
   node->declare_parameter("use_lr_raw", true);
   node->declare_parameter("pc_color", true);
+  node->declare_parameter("only_rgb", false);
+  node->declare_parameter("use_pointcloud", true);
 
   node->get_parameter("tf_prefix", tfPrefix);
   node->get_parameter("lrcheck", lrcheck);
@@ -134,24 +192,60 @@ int main(int argc, char ** argv)
   node->get_parameter("use_disparity", use_disparity);
   node->get_parameter("use_lr_raw", use_lr_raw);
   node->get_parameter("pc_color", pc_color);
+  node->get_parameter("only_rgb", only_rgb);
+  node->get_parameter("use_pointcloud", use_pointcloud);
+
+  if (only_rgb) {
+    use_depth = false;
+    use_disparity = false;
+    use_lr_raw = false;
+    use_pointcloud = false;
+  }
 
   // Creates the pipeline with specified parameters
+  dai::Pipeline pipeline;
   std::tie(pipeline, monoWidth, monoHeight, colorWidth, colorHeight) = createPipeline(
-        lrcheck, extended, subpixel, confidence, LRchecktresh);
+        lrcheck, extended, subpixel, confidence, LRchecktresh, use_depth, use_disparity,
+    use_lr_raw);
 
   // Initialize DepthAI device with configured pipeline
   dai::Device device(pipeline);
-  auto calibrationHandler = device.readCalibration();
-  RCLCPP_INFO(node->get_logger(), "Device USB status: %s",
-    usbStrings[static_cast<int32_t>(device.getUsbSpeed())].c_str());
 
-  // Creates output queues for left, right, left rectified, right rectified, depth, and disparity images
-  auto leftQueue = device.getOutputQueue("left", 30, false);
-  auto rightQueue = device.getOutputQueue("right", 30, false);
-  auto leftRectQueue = device.getOutputQueue("left_rect", 30, false);
-  auto rightRectQueue = device.getOutputQueue("right_rect", 30, false);
-  auto stereoQueue = device.getOutputQueue("depth", 30, false);
-  auto stereoQueueDisp = device.getOutputQueue("disparity", 30, false);
+  // Reads calibration data from the device
+  auto calibrationHandler = device.readCalibration();
+
+
+  // Show configuration
+  RCLCPP_INFO(node->get_logger(), "-------------------------------");
+  RCLCPP_INFO(node->get_logger(), "System Information:");
+  RCLCPP_INFO(node->get_logger(), "- Device USB status: %s",
+      usbStrings[static_cast<int32_t>(device.getUsbSpeed())].c_str());
+
+  RCLCPP_INFO(node->get_logger(), "- Color resolution: %dx%d", colorWidth, colorHeight);
+  RCLCPP_INFO(node->get_logger(), "- RGB camera activated");
+
+  if (use_lr_raw || use_depth || use_disparity) {
+    RCLCPP_INFO(node->get_logger(), "- Mono resolution: %dx%d", monoWidth, monoHeight);
+    RCLCPP_INFO(node->get_logger(), "- Stereo cameras activated");
+  }
+
+  if (use_lr_raw) {
+    RCLCPP_INFO(node->get_logger(), "- Left and right raw images activated");
+  }
+  if (use_depth) {
+    RCLCPP_INFO(node->get_logger(), "- Depth images activated");
+  }
+  if (use_disparity) {
+    RCLCPP_INFO(node->get_logger(), "- Disparity images activated");
+  }
+  if (use_pointcloud) {
+    if (pc_color) {
+      RCLCPP_INFO(node->get_logger(), "- Pointcloud activated with color");
+    } else {
+      RCLCPP_INFO(node->get_logger(), "- Pointcloud activated with intensity");
+    }
+  }
+  RCLCPP_INFO(node->get_logger(), "-------------------------------");
 
   // Creates publishers for RGB, left, right, left rectified, right rectified, depth, and disparity images
   std::unique_ptr<dai::rosBridge::BridgePublisher<sensor_msgs::msg::Image,
@@ -196,7 +290,8 @@ int main(int argc, char ** argv)
   rgbPublish->addPublisherCallback(); // addPublisherCallback works only when the dataqueue is non blocking.
 
   if (use_lr_raw) {
-    // Converts and publishes left and right images to ROS
+    // Converts and publishes left and right raw images to ROS
+    auto leftQueue = device.getOutputQueue("left", 30, false);
     leftPublish = std::make_unique<dai::rosBridge::BridgePublisher<sensor_msgs::msg::Image,
         dai::ImgFrame>>(
       leftQueue,
@@ -210,7 +305,7 @@ int main(int argc, char ** argv)
 
     leftPublish->addPublisherCallback();
 
-
+    auto rightQueue = device.getOutputQueue("right", 30, false);
     rightPublish = std::make_unique<dai::rosBridge::BridgePublisher<sensor_msgs::msg::Image,
         dai::ImgFrame>>(
       rightQueue,
@@ -225,8 +320,9 @@ int main(int argc, char ** argv)
     rightPublish->addPublisherCallback();
   }
 
-  if (use_depth || use_disparity) {
+  if (use_depth || use_disparity || use_lr_raw) { // Note: It is necessary to publish rectified images when publishing raw images
     // Converts and publishes rectified left and right images to ROS
+    auto leftRectQueue = device.getOutputQueue("left_rect", 30, false);
     leftRectPublish = std::make_unique<dai::rosBridge::BridgePublisher<sensor_msgs::msg::Image,
         dai::ImgFrame>>(
       leftRectQueue,
@@ -240,7 +336,7 @@ int main(int argc, char ** argv)
 
     leftRectPublish->addPublisherCallback();
 
-
+    auto rightRectQueue = device.getOutputQueue("right_rect", 30, false);
     rightRectPublish = std::make_unique<dai::rosBridge::BridgePublisher<sensor_msgs::msg::Image,
         dai::ImgFrame>>(
       rightRectQueue,
@@ -257,6 +353,7 @@ int main(int argc, char ** argv)
 
   if (use_depth) {
     // Converts and publishes depth image to ROS
+    auto stereoQueue = device.getOutputQueue("depth", 30, false);
     depthPublish = std::make_unique<dai::rosBridge::BridgePublisher<sensor_msgs::msg::Image,
         dai::ImgFrame>>(
       stereoQueue,
@@ -276,6 +373,7 @@ int main(int argc, char ** argv)
 
   if (use_disparity) {
     // Converts and publishes disparity image to ROS
+    auto stereoQueueDisp = device.getOutputQueue("disparity", 30, false);
     dispPublish = std::make_unique<dai::rosBridge::BridgePublisher<stereo_msgs::msg::DisparityImage,
         dai::ImgFrame>>(
       stereoQueueDisp,

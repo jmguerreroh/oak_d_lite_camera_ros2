@@ -67,6 +67,7 @@ The launch file provides several configurable arguments:
 - `use_lr_raw`: Enable left and right raw image publishing. Default: `True`
 - `use_pointcloud`: Enable point cloud publishing. Default: `True`
 - `pc_color`: Use color in the point cloud. Options: `True`for color or `False` for intensity. Default: `True`
+- `only_rgb`: Enable publishing of only RGB images. Default: `False`
 
 ## Visualizing in RViz
 

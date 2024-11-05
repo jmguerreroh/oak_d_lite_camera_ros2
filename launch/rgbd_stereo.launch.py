@@ -39,6 +39,7 @@ def generate_launch_description():
     use_lr_raw      = LaunchConfiguration('use_lr_raw',     default = True)
     use_pointcloud  = LaunchConfiguration('use_pointcloud', default = True)
     pc_color        = LaunchConfiguration('pc_color',       default = True)
+    only_rgb        = LaunchConfiguration('only_rgb',       default = False)
 
 
     declare_camera_model_cmd = DeclareLaunchArgument(
@@ -125,7 +126,7 @@ def generate_launch_description():
         'use_depth',
         default_value=use_depth,
         description='Use depth image.')
-   
+
     declare_use_disparity_cmd = DeclareLaunchArgument(
         'use_disparity',
         default_value=use_disparity,
@@ -145,6 +146,11 @@ def generate_launch_description():
         'pc_color',
         default_value=pc_color,
         description='Use color in the point cloud.')
+
+    declare_only_rgb_cmd = DeclareLaunchArgument(
+        'only_rgb',
+        default_value=only_rgb,
+        description='Use only RGB image.')
 
 
     urdf_launch = IncludeLaunchDescription(
@@ -175,6 +181,9 @@ def generate_launch_description():
                         {'use_disparity': use_disparity},
                         {'use_lr_raw': use_lr_raw},
                         {'use_pointcloud': use_pointcloud},
+                        {'pc_color': pc_color},
+                        {'only_rgb': only_rgb},
+                        {'use_pointcloud': use_pointcloud},
                         {'pc_color': pc_color}])
 
     metric_converter_node = launch_ros.descriptions.ComposableNode(
@@ -186,7 +195,7 @@ def generate_launch_description():
                                 ('image', 'stereo/converted_depth')],
                     condition=IfCondition(
                         PythonExpression(
-                            ["'", use_depth, "' == 'True' and '", use_pointcloud, "' == 'True'"]
+                            ["'", use_depth, "' == 'True' and '", use_pointcloud, "' == 'True' and '", only_rgb, "' == 'False'"]
                         )
                     )
                 )
@@ -200,10 +209,10 @@ def generate_launch_description():
                                 ('rgb/camera_info', 'rgb/camera_info'),
                                 ('points', 'stereo/points')],
                     condition=IfCondition(
-                            PythonExpression(
-                                ["'", use_depth, "' == 'True' and '", use_pointcloud, "' == 'True' and '", pc_color, "' == 'True'"]
-                            )
+                        PythonExpression(
+                            ["'", use_depth, "' == 'True' and '", use_pointcloud, "' == 'True' and '", pc_color, "' == 'True' and '", only_rgb, "' == 'False'"]
                         )
+                    )
                 )
 
     point_cloud_intensity = launch_ros.descriptions.ComposableNode(
@@ -215,10 +224,10 @@ def generate_launch_description():
                             ('intensity/camera_info', 'right_rect/camera_info'),
                             ('points', 'stereo/points')],
                 condition=IfCondition(
-                            PythonExpression(
-                                ["'", use_depth, "' == 'True' and '", use_pointcloud, "' == 'True' and '", pc_color, "' == 'False'"]
-                            )
-                        )
+                    PythonExpression(
+                        ["'", use_depth, "' == 'True' and '", use_pointcloud, "' == 'True' and '", pc_color, "' == 'False' and '", only_rgb, "' == 'False'"]
+                    )
+                )
             )
 
     point_cloud_container = launch_ros.actions.ComposableNodeContainer(
@@ -265,6 +274,7 @@ def generate_launch_description():
     ld.add_action(declare_use_lr_raw_cmd)
     ld.add_action(declare_use_pointcloud_cmd)
     ld.add_action(declare_point_cloud_color_cmd)
+    ld.add_action(declare_only_rgb_cmd)
 
     ld.add_action(rgbd_stereo_node)
     ld.add_action(urdf_launch)
