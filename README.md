@@ -1,10 +1,10 @@
-# OAK-D-LITE Camera ROS 2 Launcher
+# OAK-D Camera ROS 2 Launcher
 
 ![distro](https://img.shields.io/badge/Ubuntu%2024-Nobley%20Numbat-green)
 ![distro](https://img.shields.io/badge/ROS2-Jazzy-blue)
-[![jazzy](https://github.com/jmguerreroh/oak_d_lite_camera_ros2/actions/workflows/master.yaml/badge.svg?branch=jazzy)](https://github.com/jmguerreroh/oak_d_lite_camera_ros2/actions/workflows/master.yaml)
+[![jazzy](https://github.com/jmguerreroh/oak_d_camera/actions/workflows/master.yaml/badge.svg?branch=jazzy)](https://github.com/jmguerreroh/oak_dcamera_ros2/actions/workflows/master.yaml)
 
-This package provides a ROS 2 launch file to initialize and configure the OAK-D-LITE camera for RGBD, stereo, and point cloud processing. It includes adjustable camera configurations for transform frames, position, orientation, and depth processing parameters, along with a sample RViz configuration.
+This package provides a ROS 2 launch file to initialize and configure the OAK-D camera for RGBD, stereo, and point cloud processing. It includes adjustable camera configurations for transform frames, position, orientation, and depth processing parameters, along with a sample RViz configuration.
 
 ## Installation
 
@@ -16,7 +16,7 @@ This package provides a ROS 2 launch file to initialize and configure the OAK-D-
 
 2. Clone the repository and add it to your ROS 2 workspace:
     ```bash
-    git clone https://github.com/jmguerreroh/oak_d_lite_camera_ros2.git
+    git clone https://github.com/jmguerreroh/oak_d_camera.git
     ```
 
 3. Install dependencies:
@@ -31,10 +31,10 @@ This package provides a ROS 2 launch file to initialize and configure the OAK-D-
 
 ## Usage
 
-To launch the OAK-D-LITE camera node with default parameters:
+To launch the OAK-D camera node with default parameters:
 
 ```bash
-ros2 launch oak_d_lite_camera_ros2 rgbd_stereo.launch.py
+ros2 launch oak_d_camera rgbd_stereo.launch.py
 
 ```
 

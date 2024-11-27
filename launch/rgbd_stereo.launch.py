@@ -11,7 +11,7 @@ import launch_ros.descriptions
 
 
 def generate_launch_description():
-    default_rviz = os.path.join(get_package_share_directory('oak_d_lite_camera_ros2'),
+    default_rviz = os.path.join(get_package_share_directory('oak_d_camera'),
                                 'rviz', 'rgbd_stereo_pcl.rviz')
     urdf_launch_dir = os.path.join(get_package_share_directory('depthai_descriptions'), 'launch')
 
@@ -169,7 +169,7 @@ def generate_launch_description():
 
 
     rgbd_stereo_node = launch_ros.actions.Node(
-            package='oak_d_lite_camera_ros2', executable='rgbd_stereo_node',
+            package='oak_d_camera', executable='rgbd_stereo_node',
             output='screen',
             parameters=[{'tf_prefix': tf_prefix},
                         {'lrcheck': lrcheck},

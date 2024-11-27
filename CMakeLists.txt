@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.10.2) 
-project(oak_d_lite_camera_ros2 VERSION 0.0.1 LANGUAGES CXX C)
+project(oak_d_camera VERSION 0.0.1 LANGUAGES CXX C)
 
 set(CMAKE_CXX_STANDARD 14)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
