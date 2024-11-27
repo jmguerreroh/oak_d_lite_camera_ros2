@@ -23,7 +23,7 @@ jobs:
       - name: build and test
         uses: ros-tooling/action-ros-ci@0.3.15
         with:
-          package-name: oak_d_camera_ros2
+          package-name: oak_d_camera
           target-ros2-distro: jazzy
           vcs-repo-file-url: ""
           colcon-defaults: |
