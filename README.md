@@ -51,8 +51,8 @@ The launch file provides several configurable arguments:
 
 #### Camera Position and Orientation
 
-- `cam_pos_x`, `cam_pos_y`, `cam_pos_z`: Position of the camera relative to the base frame. Default: `0.0`
-- `cam_roll`, `cam_pitch`, `cam_yaw`: Orientation of the camera relative to the base frame. Default: `0.0`
+- `cam_pos_x`, `cam_pos_y`, `cam_pos_z`: Camera position relative to the base frame. Default: `0.0`
+- `cam_roll`, `cam_pitch`, `cam_yaw`: Camera orientation relative to the base frame. Default: `0.0`
 
 #### Depth Processing Parameters
 
@@ -61,14 +61,19 @@ The launch file provides several configurable arguments:
 - `subpixel`: Enable subpixel accuracy. Default: `True`
 - `confidence`: Set confidence threshold for depth estimation. Default: `200`
 - `LRchecktresh`: Set left-right consistency threshold. Default: `5`
+
+Please refer to [StereoDepth documentation](https://docs.luxonis.com/software/depthai-components/nodes/stereo_depth) for more information.
+
+#### Options
+
+- `only_rgb`: Enable publishing of only RGB images. Default: `False`
 - `use_rviz`: Launch RViz for visualization. Default: `True`
-- `use_depth`: Enable depth image publishing. Default: `True`
+  `use_depth`: Enable depth image publishing. Default: `True`
 - `use_disparity`: Enable disparity image publishing. Default: `True`
 - `use_lr_raw`: Enable left and right raw image publishing. Default: `True`
 - `use_pointcloud`: Enable point cloud publishing. Default: `True`
-- `pc_color`: Use color in the point cloud. Options: `True`for color or `False` for intensity. Default: `True`
-- `only_rgb`: Enable publishing of only RGB images. Default: `False`
-
+- `pc_color`: Use color in the point cloud. Options: `True` for color or `False` for intensity. Default: `True`
+  
 ## Visualizing in RViz
 
 The launch file opens RViz with a pre-configured view. You can modify `rviz/rgbd_stereo_pcl.rviz` to customize the visualization.
