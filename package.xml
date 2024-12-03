@@ -1,9 +1,9 @@
 <?xml version="1.0"?>
 <?xml-model href="http://download.ros.org/schema/package_format3.xsd" schematypens="http://www.w3.org/2001/XMLSchema"?>
 <package format="3">
-  <name>oak_d_camera</name>
+  <name>oak_d_lite_camera_ros2</name>
   <version>1.0.0</version>
-  <description>OAK-D camera package</description>
+  <description>OAK-D-LITE camera package</description>
   <maintainer email="josemiguel.guerrero@urjc.es">Jose Miguel Guerrero Hernandez</maintainer>
   <license>MIT License</license>
   <buildtool_depend>ament_cmake</buildtool_depend>

@@ -232,8 +232,12 @@ int main(int argc, char ** argv)
         lrcheck, extended, subpixel, confidence, LRchecktresh, use_depth, use_disparity,
     use_lr_raw);
 
-  // Initialize DepthAI device with configured pipeline
-  dai::Device device(pipeline);
+  // Initialize DepthAI devices with configured pipeline
+  auto deviceInfoVec = dai::Device::getAnyAvailableDevice();
+  RCLCPP_INFO(node->get_logger(), "Camera detected: %d", std::get<0>(deviceInfoVec));
+  
+  // TODO: check if get<0> = true
+  dai::Device device(pipeline, std::get<1>(deviceInfoVec));
 
   // Reads calibration data from the device
   auto calibrationHandler = device.readCalibration();
@@ -241,6 +245,7 @@ int main(int argc, char ** argv)
   // Show configuration
   RCLCPP_INFO(node->get_logger(), "-------------------------------");
   RCLCPP_INFO(node->get_logger(), "System Information:");
+  RCLCPP_INFO(node->get_logger(), "- Device MxID : %s", device.getMxId().c_str());
   RCLCPP_INFO(node->get_logger(), "- Device USB status: %s",
       usbStrings[static_cast<int32_t>(device.getUsbSpeed())].c_str());
 

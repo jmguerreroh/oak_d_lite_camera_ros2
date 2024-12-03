@@ -1,0 +1,4 @@
+hemos intentado generalizar para que acepte varias camaras pero falta:
+- añadir un namespace por camara
+- limpiar bugs de todo el codigo
+- revisar si leftPublish y rightPublish cuando salga de la funcion y se libere su memoria me va a morder.
