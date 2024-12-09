@@ -1,10 +1,10 @@
-# OAK-D-LITE Camera ROS 2 Launcher
+# OAK-D Camera ROS 2 Launcher
 
 ![distro](https://img.shields.io/badge/Ubuntu%2024-Nobley%20Numbat-green)
 ![distro](https://img.shields.io/badge/ROS2-Jazzy-blue)
-[![jazzy](https://github.com/jmguerreroh/oak_d_lite_camera_ros2/actions/workflows/master.yaml/badge.svg?branch=jazzy)](https://github.com/jmguerreroh/oak_d_lite_camera_ros2/actions/workflows/master.yaml)
+[![jazzy](https://github.com/jmguerreroh/oak_d_camera/actions/workflows/master.yaml/badge.svg?branch=jazzy)](https://github.com/jmguerreroh/oak_dcamera_ros2/actions/workflows/master.yaml)
 
-This package provides a ROS 2 launch file to initialize and configure the OAK-D-LITE camera for RGBD, stereo, and point cloud processing. It includes adjustable camera configurations for transform frames, position, orientation, and depth processing parameters, along with a sample RViz configuration.
+This package provides a ROS 2 launch file to initialize and configure the OAK-D camera for RGBD, stereo, and point cloud processing. It includes adjustable camera configurations for transform frames, position, orientation, and depth processing parameters, along with a sample RViz configuration.
 
 ## Installation
 
@@ -16,7 +16,7 @@ This package provides a ROS 2 launch file to initialize and configure the OAK-D-
 
 2. Clone the repository and add it to your ROS 2 workspace:
     ```bash
-    git clone https://github.com/jmguerreroh/oak_d_lite_camera_ros2.git
+    git clone https://github.com/jmguerreroh/oak_d_camera.git
     ```
 
 3. Install dependencies:
@@ -31,10 +31,10 @@ This package provides a ROS 2 launch file to initialize and configure the OAK-D-
 
 ## Usage
 
-To launch the OAK-D-LITE camera node with default parameters:
+To launch the OAK-D camera node with default parameters:
 
 ```bash
-ros2 launch oak_d_lite_camera_ros2 rgbd_stereo.launch.py
+ros2 launch oak_d_camera rgbd_stereo.launch.py
 
 ```
 
@@ -51,8 +51,8 @@ The launch file provides several configurable arguments:
 
 #### Camera Position and Orientation
 
-- `cam_pos_x`, `cam_pos_y`, `cam_pos_z`: Position of the camera relative to the base frame. Default: `0.0`
-- `cam_roll`, `cam_pitch`, `cam_yaw`: Orientation of the camera relative to the base frame. Default: `0.0`
+- `cam_pos_x`, `cam_pos_y`, `cam_pos_z`: Camera position relative to the base frame. Default: `0.0`
+- `cam_roll`, `cam_pitch`, `cam_yaw`: Camera orientation relative to the base frame. Default: `0.0`
 
 #### Depth Processing Parameters
 
@@ -61,14 +61,19 @@ The launch file provides several configurable arguments:
 - `subpixel`: Enable subpixel accuracy. Default: `True`
 - `confidence`: Set confidence threshold for depth estimation. Default: `200`
 - `LRchecktresh`: Set left-right consistency threshold. Default: `5`
+
+Please refer to [StereoDepth documentation](https://docs.luxonis.com/software/depthai-components/nodes/stereo_depth) for more information.
+
+#### Options
+
+- `only_rgb`: Enable publishing of only RGB images. Default: `False`
 - `use_rviz`: Launch RViz for visualization. Default: `True`
-- `use_depth`: Enable depth image publishing. Default: `True`
+  `use_depth`: Enable depth image publishing. Default: `True`
 - `use_disparity`: Enable disparity image publishing. Default: `True`
 - `use_lr_raw`: Enable left and right raw image publishing. Default: `True`
 - `use_pointcloud`: Enable point cloud publishing. Default: `True`
-- `pc_color`: Use color in the point cloud. Options: `True`for color or `False` for intensity. Default: `True`
-- `only_rgb`: Enable publishing of only RGB images. Default: `False`
-
+- `pc_color`: Use color in the point cloud. Options: `True` for color or `False` for intensity. Default: `True`
+  
 ## Visualizing in RViz
 
 The launch file opens RViz with a pre-configured view. You can modify `rviz/rgbd_stereo_pcl.rviz` to customize the visualization.
