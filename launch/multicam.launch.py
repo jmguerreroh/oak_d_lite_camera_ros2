@@ -152,6 +152,20 @@ def generate_launch_description():
         default_value=only_rgb,
         description='Use only RGB image.')
 
+    urdf_launch1 = IncludeLaunchDescription(
+                            launch_description_sources.PythonLaunchDescriptionSource(
+                                    os.path.join(urdf_launch_dir, 'urdf_launch.py')),
+                            launch_arguments={'tf_prefix' : 'oak1',
+                                              'camera_model': camera_model,
+                                              'base_frame'  : 'oak1-d_frame',
+                                              'parent_frame': 'oak1-d-base-frame',
+                                              'cam_pos_x'   : cam_pos_x,
+                                              'cam_pos_y'   : cam_pos_y,
+                                              'cam_pos_z'   : cam_pos_z,
+                                              'cam_roll'    : cam_roll,
+                                              'cam_pitch'   : cam_pitch,
+                                              'cam_yaw'     : cam_yaw}.items())
+
     rgbd_stereo_node = launch_ros.actions.Node(
             package='oak_d_camera', executable='rgbd_stereo_node',
             output='screen',
@@ -171,28 +185,14 @@ def generate_launch_description():
                         {'use_pointcloud': use_pointcloud},
                         {'pc_color': pc_color}])
 
-        metric_converter_node = launch_ros.descriptions.ComposableNode(
-                    package='depth_image_proc',
-                    plugin='depth_image_proc::ConvertMetricNode',
-                    name='convert_metric_node',
-                    remappings=[('image_raw', 'stereo/depth'),
-                                ('camera_info', 'stereo/camera_info'),
-                                ('image', 'stereo/converted_depth')],
-                    condition=IfCondition(
-                        PythonExpression(
-                            ["'", use_depth, "' == 'True' and '", use_pointcloud, "' == 'True' and '", only_rgb, "' == 'False'"]
-                        )
-                    )
-                )
-
     point_cloud_color1 = launch_ros.descriptions.ComposableNode(
                     package='depth_image_proc',
                     plugin='depth_image_proc::PointCloudXyzrgbNode',
                     name='point_cloud_xyzrgb_node',
-                    remappings=[('depth_registered/image_rect', 'stereo/converted_depth'),
-                                ('rgb/image_rect_color', 'rgb/image'),
-                                ('rgb/camera_info', 'rgb/camera_info'),
-                                ('points', 'stereo/points')],
+                    remappings=[('depth_registered/image_rect', '/c1/stereo/depth'),
+                                ('rgb/image_rect_color', 'c1/rgb/image'),
+                                ('rgb/camera_info', 'c1/rgb/camera_info'),
+                                ('points', 'c1/stereo/points')],
                     condition=IfCondition(
                         PythonExpression(
                             ["'", use_depth, "' == 'True' and '", use_pointcloud, "' == 'True' and '", pc_color, "' == 'True' and '", only_rgb, "' == 'False'"]
@@ -204,10 +204,10 @@ def generate_launch_description():
                 package='depth_image_proc',
                 plugin='depth_image_proc::PointCloudXyziNode',
                 name='point_cloud_xyzi',
-                remappings=[('depth/image_rect', 'stereo/converted_depth'),
-                            ('intensity/image_rect', 'right_rect/image'),
-                            ('intensity/camera_info', 'right_rect/camera_info'),
-                            ('points', 'stereo/points')],
+                remappings=[('depth/image_rect', 'c1/stereo/depth'),
+                            ('intensity/image_rect', 'c1/right_rect/image'),
+                            ('intensity/camera_info', 'c1/right_rect/camera_info'),
+                            ('points', 'c1/stereo/points')],
                 condition=IfCondition(
                     PythonExpression(
                         ["'", use_depth, "' == 'True' and '", use_pointcloud, "' == 'True' and '", pc_color, "' == 'False' and '", only_rgb, "' == 'False'"]
@@ -222,11 +222,24 @@ def generate_launch_description():
                 executable='component_container',
                 composable_node_descriptions=[
                     # Driver itself
-                    metric_converter_node,
-                    point_cloud_color,
-                    point_cloud_intensity,
+                    point_cloud_color1,
+                    point_cloud_intensity1,
                 ],
                 output='screen',)
+
+    urdf_launch2 = IncludeLaunchDescription(
+                            launch_description_sources.PythonLaunchDescriptionSource(
+                                    os.path.join(urdf_launch_dir, 'urdf_launch.py')),
+                            launch_arguments={'tf_prefix' : 'oak2',
+                                              'camera_model': camera_model,
+                                              'base_frame'  : 'oak2-d_frame',
+                                              'parent_frame': 'oak2-d-base-frame',
+                                              'cam_pos_x'   : cam_pos_x,
+                                              'cam_pos_y'   : cam_pos_y,
+                                              'cam_pos_z'   : cam_pos_z,
+                                              'cam_roll'    : cam_roll,
+                                              'cam_pitch'   : cam_pitch,
+                                              'cam_yaw'     : cam_yaw}.items())
 
     rgbd_stereo_node2 = launch_ros.actions.Node(
             package='oak_d_camera', executable='rgbd_stereo_node',
@@ -247,6 +260,62 @@ def generate_launch_description():
                         {'use_pointcloud': use_pointcloud},
                         {'pc_color': pc_color}])
 
+    point_cloud_color2 = launch_ros.descriptions.ComposableNode(
+                    package='depth_image_proc',
+                    plugin='depth_image_proc::PointCloudXyzrgbNode',
+                    name='point_cloud_xyzrgb_node',
+                    remappings=[('depth_registered/image_rect', 'c2/stereo/depth'),
+                                ('rgb/image_rect_color', 'c2/rgb/image'),
+                                ('rgb/camera_info', 'c2/rgb/camera_info'),
+                                ('points', 'c2/stereo/points')],
+                    condition=IfCondition(
+                        PythonExpression(
+                            ["'", use_depth, "' == 'True' and '", use_pointcloud, "' == 'True' and '", pc_color, "' == 'True' and '", only_rgb, "' == 'False'"]
+                        )
+                    )
+                )
+
+    point_cloud_intensity2 = launch_ros.descriptions.ComposableNode(
+                package='depth_image_proc',
+                plugin='depth_image_proc::PointCloudXyziNode',
+                name='point_cloud_xyzi',
+                remappings=[('depth/image_rect', 'c2/stereo/depth'),
+                            ('intensity/image_rect', 'c2/right_rect/image'),
+                            ('intensity/camera_info', 'c2/right_rect/camera_info'),
+                            ('points', 'c2/stereo/points')],
+                condition=IfCondition(
+                    PythonExpression(
+                        ["'", use_depth, "' == 'True' and '", use_pointcloud, "' == 'True' and '", pc_color, "' == 'False' and '", only_rgb, "' == 'False'"]
+                    )
+                )
+            )
+
+    point_cloud_container2 = launch_ros.actions.ComposableNodeContainer(
+                name='container',
+                namespace='',
+                package='rclcpp_components',
+                executable='component_container',
+                composable_node_descriptions=[
+                    # Driver itself
+                    point_cloud_color2,
+                    point_cloud_intensity2,
+                ],
+                output='screen',)
+
+    urdf_launch3 = IncludeLaunchDescription(
+                            launch_description_sources.PythonLaunchDescriptionSource(
+                                    os.path.join(urdf_launch_dir, 'urdf_launch.py')),
+                            launch_arguments={'tf_prefix' : 'oak3',
+                                              'camera_model': camera_model,
+                                              'base_frame'  : 'oak3-d_frame',
+                                              'parent_frame': 'oak3-d-base-frame',
+                                              'cam_pos_x'   : cam_pos_x,
+                                              'cam_pos_y'   : cam_pos_y,
+                                              'cam_pos_z'   : cam_pos_z,
+                                              'cam_roll'    : cam_roll,
+                                              'cam_pitch'   : cam_pitch,
+                                              'cam_yaw'     : cam_yaw}.items())
+
     rgbd_stereo_node3 = launch_ros.actions.Node(
             package='oak_d_camera', executable='rgbd_stereo_node',
             output='screen',
@@ -266,6 +335,62 @@ def generate_launch_description():
                         {'use_pointcloud': use_pointcloud},
                         {'pc_color': pc_color}])
 
+    point_cloud_color3 = launch_ros.descriptions.ComposableNode(
+                    package='depth_image_proc',
+                    plugin='depth_image_proc::PointCloudXyzrgbNode',
+                    name='point_cloud_xyzrgb_node',
+                    remappings=[('depth_registered/image_rect', 'c3/stereo/depth'),
+                                ('rgb/image_rect_color', 'c3/rgb/image'),
+                                ('rgb/camera_info', 'c3/rgb/camera_info'),
+                                ('points', 'c3/stereo/points')],
+                    condition=IfCondition(
+                        PythonExpression(
+                            ["'", use_depth, "' == 'True' and '", use_pointcloud, "' == 'True' and '", pc_color, "' == 'True' and '", only_rgb, "' == 'False'"]
+                        )
+                    )
+                )
+
+    point_cloud_intensity3 = launch_ros.descriptions.ComposableNode(
+                package='depth_image_proc',
+                plugin='depth_image_proc::PointCloudXyziNode',
+                name='point_cloud_xyzi',
+                remappings=[('depth/image_rect', 'c3/stereo/depth'),
+                            ('intensity/image_rect', 'c3/right_rect/image'),
+                            ('intensity/camera_info', 'c3/right_rect/camera_info'),
+                            ('points', 'c3/stereo/points')],
+                condition=IfCondition(
+                    PythonExpression(
+                        ["'", use_depth, "' == 'True' and '", use_pointcloud, "' == 'True' and '", pc_color, "' == 'False' and '", only_rgb, "' == 'False'"]
+                    )
+                )
+            )
+
+    point_cloud_container3 = launch_ros.actions.ComposableNodeContainer(
+                name='container',
+                namespace='',
+                package='rclcpp_components',
+                executable='component_container',
+                composable_node_descriptions=[
+                    # Driver itself
+                    point_cloud_color3,
+                    point_cloud_intensity3,
+                ],
+                output='screen',)
+
+    urdf_launch4 = IncludeLaunchDescription(
+                            launch_description_sources.PythonLaunchDescriptionSource(
+                                    os.path.join(urdf_launch_dir, 'urdf_launch.py')),
+                            launch_arguments={'tf_prefix' : 'oak4',
+                                              'camera_model': camera_model,
+                                              'base_frame'  : 'oak4-d_frame',
+                                              'parent_frame': 'oak4-d-base-frame',
+                                              'cam_pos_x'   : cam_pos_x,
+                                              'cam_pos_y'   : cam_pos_y,
+                                              'cam_pos_z'   : cam_pos_z,
+                                              'cam_roll'    : cam_roll,
+                                              'cam_pitch'   : cam_pitch,
+                                              'cam_yaw'     : cam_yaw}.items())
+
     rgbd_stereo_node4 = launch_ros.actions.Node(
             package='oak_d_camera', executable='rgbd_stereo_node',
             output='screen',
@@ -284,6 +409,48 @@ def generate_launch_description():
                         {'only_rgb': only_rgb},
                         {'use_pointcloud': use_pointcloud},
                         {'pc_color': pc_color}])
+
+    point_cloud_color4 = launch_ros.descriptions.ComposableNode(
+                    package='depth_image_proc',
+                    plugin='depth_image_proc::PointCloudXyzrgbNode',
+                    name='point_cloud_xyzrgb_node',
+                    remappings=[('depth_registered/image_rect', 'c4/stereo/depth'),
+                                ('rgb/image_rect_color', 'c4/rgb/image'),
+                                ('rgb/camera_info', 'c4/rgb/camera_info'),
+                                ('points', 'c4/stereo/points')],
+                    condition=IfCondition(
+                        PythonExpression(
+                            ["'", use_depth, "' == 'True' and '", use_pointcloud, "' == 'True' and '", pc_color, "' == 'True' and '", only_rgb, "' == 'False'"]
+                        )
+                    )
+                )
+
+    point_cloud_intensity4 = launch_ros.descriptions.ComposableNode(
+                package='depth_image_proc',
+                plugin='depth_image_proc::PointCloudXyziNode',
+                name='point_cloud_xyzi',
+                remappings=[('depth/image_rect', 'c4/stereo/depth'),
+                            ('intensity/image_rect', 'c4/right_rect/image'),
+                            ('intensity/camera_info', 'c4/right_rect/camera_info'),
+                            ('points', 'c4/stereo/points')],
+                condition=IfCondition(
+                    PythonExpression(
+                        ["'", use_depth, "' == 'True' and '", use_pointcloud, "' == 'True' and '", pc_color, "' == 'False' and '", only_rgb, "' == 'False'"]
+                    )
+                )
+            )
+
+    point_cloud_container4 = launch_ros.actions.ComposableNodeContainer(
+                name='container',
+                namespace='',
+                package='rclcpp_components',
+                executable='component_container',
+                composable_node_descriptions=[
+                    # Driver itself
+                    point_cloud_color4,
+                    point_cloud_intensity4,
+                ],
+                output='screen',)
 
 
     #delayed_rgbd_stereo_node2 = RegisterEventHandler(OnProcessStart(target_action=rgbd_stereo_node,on_start=[LogInfo(msg='Turtlesim started, spawning turtle'),rgbd_stereo_node2]))
@@ -324,10 +491,18 @@ def generate_launch_description():
     ld.add_action(declare_point_cloud_color_cmd)
     ld.add_action(declare_only_rgb_cmd)
 
+    ld.add_action(urdf_launch1)
     ld.add_action(rgbd_stereo_node)
+    ld.add_action(point_cloud_container1)
+    ld.add_action(urdf_launch2)
     ld.add_action(delayed_rgbd_stereo_node2)
+    ld.add_action(point_cloud_container2)
+    ld.add_action(urdf_launch3)
     ld.add_action(delayed_rgbd_stereo_node3)
+    ld.add_action(point_cloud_container3)
+    ld.add_action(urdf_launch4)
     ld.add_action(delayed_rgbd_stereo_node4)
+    ld.add_action(point_cloud_container4)
     ld.add_action(rviz_node)
 
     return ld
