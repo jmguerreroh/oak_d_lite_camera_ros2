@@ -185,21 +185,6 @@ def generate_launch_description():
                         {'use_pointcloud': use_pointcloud},
                         {'pc_color': pc_color}])
 
-    point_cloud_color1 = launch_ros.descriptions.ComposableNode(
-                    package='depth_image_proc',
-                    plugin='depth_image_proc::PointCloudXyzrgbNode',
-                    name='point_cloud_xyzrgb_node',
-                    remappings=[('depth_registered/image_rect', '/c1/stereo/depth'),
-                                ('rgb/image_rect_color', 'c1/rgb/image'),
-                                ('rgb/camera_info', 'c1/rgb/camera_info'),
-                                ('points', 'c1/stereo/points')],
-                    condition=IfCondition(
-                        PythonExpression(
-                            ["'", use_depth, "' == 'True' and '", use_pointcloud, "' == 'True' and '", pc_color, "' == 'True' and '", only_rgb, "' == 'False'"]
-                        )
-                    )
-                )
-
     point_cloud_intensity1 = launch_ros.descriptions.ComposableNode(
                 package='depth_image_proc',
                 plugin='depth_image_proc::PointCloudXyziNode',
@@ -222,7 +207,6 @@ def generate_launch_description():
                 executable='component_container',
                 composable_node_descriptions=[
                     # Driver itself
-                    point_cloud_color1,
                     point_cloud_intensity1,
                 ],
                 output='screen',)
@@ -260,21 +244,6 @@ def generate_launch_description():
                         {'use_pointcloud': use_pointcloud},
                         {'pc_color': pc_color}])
 
-    point_cloud_color2 = launch_ros.descriptions.ComposableNode(
-                    package='depth_image_proc',
-                    plugin='depth_image_proc::PointCloudXyzrgbNode',
-                    name='point_cloud_xyzrgb_node',
-                    remappings=[('depth_registered/image_rect', 'c2/stereo/depth'),
-                                ('rgb/image_rect_color', 'c2/rgb/image'),
-                                ('rgb/camera_info', 'c2/rgb/camera_info'),
-                                ('points', 'c2/stereo/points')],
-                    condition=IfCondition(
-                        PythonExpression(
-                            ["'", use_depth, "' == 'True' and '", use_pointcloud, "' == 'True' and '", pc_color, "' == 'True' and '", only_rgb, "' == 'False'"]
-                        )
-                    )
-                )
-
     point_cloud_intensity2 = launch_ros.descriptions.ComposableNode(
                 package='depth_image_proc',
                 plugin='depth_image_proc::PointCloudXyziNode',
@@ -297,7 +266,6 @@ def generate_launch_description():
                 executable='component_container',
                 composable_node_descriptions=[
                     # Driver itself
-                    point_cloud_color2,
                     point_cloud_intensity2,
                 ],
                 output='screen',)
@@ -335,21 +303,6 @@ def generate_launch_description():
                         {'use_pointcloud': use_pointcloud},
                         {'pc_color': pc_color}])
 
-    point_cloud_color3 = launch_ros.descriptions.ComposableNode(
-                    package='depth_image_proc',
-                    plugin='depth_image_proc::PointCloudXyzrgbNode',
-                    name='point_cloud_xyzrgb_node',
-                    remappings=[('depth_registered/image_rect', 'c3/stereo/depth'),
-                                ('rgb/image_rect_color', 'c3/rgb/image'),
-                                ('rgb/camera_info', 'c3/rgb/camera_info'),
-                                ('points', 'c3/stereo/points')],
-                    condition=IfCondition(
-                        PythonExpression(
-                            ["'", use_depth, "' == 'True' and '", use_pointcloud, "' == 'True' and '", pc_color, "' == 'True' and '", only_rgb, "' == 'False'"]
-                        )
-                    )
-                )
-
     point_cloud_intensity3 = launch_ros.descriptions.ComposableNode(
                 package='depth_image_proc',
                 plugin='depth_image_proc::PointCloudXyziNode',
@@ -372,7 +325,6 @@ def generate_launch_description():
                 executable='component_container',
                 composable_node_descriptions=[
                     # Driver itself
-                    point_cloud_color3,
                     point_cloud_intensity3,
                 ],
                 output='screen',)
@@ -410,21 +362,6 @@ def generate_launch_description():
                         {'use_pointcloud': use_pointcloud},
                         {'pc_color': pc_color}])
 
-    point_cloud_color4 = launch_ros.descriptions.ComposableNode(
-                    package='depth_image_proc',
-                    plugin='depth_image_proc::PointCloudXyzrgbNode',
-                    name='point_cloud_xyzrgb_node',
-                    remappings=[('depth_registered/image_rect', 'c4/stereo/depth'),
-                                ('rgb/image_rect_color', 'c4/rgb/image'),
-                                ('rgb/camera_info', 'c4/rgb/camera_info'),
-                                ('points', 'c4/stereo/points')],
-                    condition=IfCondition(
-                        PythonExpression(
-                            ["'", use_depth, "' == 'True' and '", use_pointcloud, "' == 'True' and '", pc_color, "' == 'True' and '", only_rgb, "' == 'False'"]
-                        )
-                    )
-                )
-
     point_cloud_intensity4 = launch_ros.descriptions.ComposableNode(
                 package='depth_image_proc',
                 plugin='depth_image_proc::PointCloudXyziNode',
@@ -447,7 +384,6 @@ def generate_launch_description():
                 executable='component_container',
                 composable_node_descriptions=[
                     # Driver itself
-                    point_cloud_color4,
                     point_cloud_intensity4,
                 ],
                 output='screen',)
