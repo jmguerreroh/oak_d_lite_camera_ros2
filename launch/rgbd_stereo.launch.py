@@ -13,7 +13,7 @@ import launch_ros.descriptions
 def generate_launch_description():
     default_rviz = os.path.join(get_package_share_directory('oak_d_camera'),
                                 'rviz', 'rgbd_stereo_pcl.rviz')
-    urdf_launch_dir = os.path.join(get_package_share_directory('depthai_descriptions'), 'launch')
+    urdf_launch_dir = os.path.join(get_package_share_directory('oak_d_camera'), 'launch')
 
 
     camera_model = LaunchConfiguration('camera_model',  default = 'OAK-D-LITE')
@@ -40,6 +40,7 @@ def generate_launch_description():
     use_pointcloud  = LaunchConfiguration('use_pointcloud', default = True)
     pc_color        = LaunchConfiguration('pc_color',       default = True)
     only_rgb        = LaunchConfiguration('only_rgb',       default = False)
+    use_base       = LaunchConfiguration('use_base',       default = False)
 
 
     declare_camera_model_cmd = DeclareLaunchArgument(
@@ -151,7 +152,11 @@ def generate_launch_description():
         'only_rgb',
         default_value=only_rgb,
         description='Use only RGB image.')
-
+    
+    declare_use_base_cmd = DeclareLaunchArgument(
+        'use_base',
+        default_value=use_base,
+        description='Use base description.')
 
     urdf_launch = IncludeLaunchDescription(
                             launch_description_sources.PythonLaunchDescriptionSource(
@@ -165,7 +170,8 @@ def generate_launch_description():
                                               'cam_pos_z'   : cam_pos_z,
                                               'cam_roll'    : cam_roll,
                                               'cam_pitch'   : cam_pitch,
-                                              'cam_yaw'     : cam_yaw}.items())
+                                              'cam_yaw'     : cam_yaw,
+                                              'use_base'    : use_base}.items())
 
 
     rgbd_stereo_node = launch_ros.actions.Node(
@@ -275,6 +281,7 @@ def generate_launch_description():
     ld.add_action(declare_use_pointcloud_cmd)
     ld.add_action(declare_point_cloud_color_cmd)
     ld.add_action(declare_only_rgb_cmd)
+    ld.add_action(declare_use_base_cmd)
 
     ld.add_action(rgbd_stereo_node)
     ld.add_action(urdf_launch)
