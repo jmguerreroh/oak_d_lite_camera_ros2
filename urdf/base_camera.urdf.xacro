@@ -1,9 +1,8 @@
 <?xml version="1.0"?>
 <robot xmlns:xacro="http://www.ros.org/wiki/xacro" name="base_oak">
   <!-- Macro base -->
-  <xacro:macro name="base" params="camera_frame">
+  <xacro:macro name="base" params="camera_frame cam_pos_x cam_pos_y cam_pos_z cam_roll cam_pitch cam_yaw">
     <link name="base_oak">
-
 
       <visual>
         <origin xyz="0 0 0" rpy="1.56 0 -1.56"/>
@@ -40,7 +39,7 @@
     <joint name="footprint_oak_joint" type="fixed">
       <parent link="base_footprint"/>
       <child link="${camera_frame}"/>
-      <origin xyz="0 0 0.08863" rpy="0 -0.0508 0"/>
+      <origin xyz="${cam_pos_x} ${cam_pos_y} ${cam_pos_z + 0.08863}" rpy="${cam_roll} ${- 0.0508 - cam_pitch} ${cam_yaw}"/>
     </joint>
 
     <link name="${camera_frame}" />

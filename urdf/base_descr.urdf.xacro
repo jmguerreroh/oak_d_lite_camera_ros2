@@ -14,15 +14,17 @@
 	<xacro:arg name="rs_compat" default="false" />
     <xacro:arg name="use_base" default="false" />
 
-	<xacro:include filename="$(find depthai_descriptions)/urdf/include/depthai_macro.urdf.xacro" />
+	<xacro:include filename="$(find oak_d_camera)/urdf/include/depthai_macro.urdf.xacro" />
     <xacro:include filename="$(find oak_d_camera)/urdf/base_camera.urdf.xacro" />
 
     <xacro:if value="$(arg use_base)">
-        <xacro:base camera_frame="$(arg parent_frame)" />
+        <xacro:base camera_frame="$(arg parent_frame)" cam_pos_x="$(arg cam_pos_x)" cam_pos_y="$(arg cam_pos_y)" cam_pos_z="$(arg cam_pos_z)" cam_roll="$(arg cam_roll)" cam_pitch="$(arg cam_pitch)" cam_yaw="$(arg cam_yaw)" />
     </xacro:if>
 
     <xacro:unless value="$(arg use_base)">
-        <link name="$(arg parent_frame)" />
+        <link name="$(arg parent_frame)" >
+			<pose xyz="$(arg cam_pos_x) $(arg cam_pos_y) $(arg cam_pos_z)" rpy="$(arg cam_roll) $(arg cam_pitch) $(arg cam_yaw)" />
+		</link>
     </xacro:unless>
 
 	<xacro:depthai_camera camera_name="$(arg camera_name)" parent="$(arg parent_frame)"
