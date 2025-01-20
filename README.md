@@ -73,6 +73,7 @@ Please refer to [StereoDepth documentation](https://docs.luxonis.com/software/de
 - `use_lr_raw`: Enable left and right raw image publishing. Default: `True`
 - `use_pointcloud`: Enable point cloud publishing. Default: `True`
 - `pc_color`: Use color in the point cloud. Options: `True` for color or `False` for intensity. Default: `True`
+- `use_base`: Use the STL base bracket. Default: `True`
   
 ## Visualizing in RViz
 
