@@ -39,7 +39,7 @@
     <joint name="footprint_oak_joint" type="fixed">
       <parent link="base_footprint"/>
       <child link="${camera_frame}"/>
-      <origin xyz="${cam_pos_x} ${cam_pos_y} ${cam_pos_z + 0.08863}" rpy="${cam_roll} ${- 0.0508 - cam_pitch} ${cam_yaw}"/>
+      <origin xyz="${cam_pos_x} ${cam_pos_y} ${cam_pos_z + 0.08863}" rpy="${cam_roll} ${- 0.0858 - cam_pitch} ${cam_yaw}"/>
     </joint>
 
     <link name="${camera_frame}" />
