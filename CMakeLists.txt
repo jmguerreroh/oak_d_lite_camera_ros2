@@ -69,6 +69,8 @@ dai_add_node_ros2(rgbd_stereo_node src/rgbd_stereo_publisher.cpp)
 
 install(DIRECTORY rviz DESTINATION share/${PROJECT_NAME})
 install(DIRECTORY launch DESTINATION share/${PROJECT_NAME})
+install(DIRECTORY urdf DESTINATION share/${PROJECT_NAME})
+install(DIRECTORY meshes DESTINATION share/${PROJECT_NAME})
 
 install(TARGETS
   rgbd_stereo_node
