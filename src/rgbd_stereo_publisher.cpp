@@ -30,19 +30,22 @@ SOFTWARE.
 #include "camera_info_manager/camera_info_manager.hpp"
 #include "rclcpp/executors.hpp"
 #include "rclcpp/node.hpp"
-#include "sensor_msgs/msg/image.hpp"
 #include "stereo_msgs/msg/disparity_image.hpp"
+#include "sensor_msgs/msg/image.hpp"
+#include "sensor_msgs/msg/imu.hpp"
 
 // Includes DepthAI libraries needed to work with the OAK-D device and pipeline
 #include "depthai/device/DataQueue.hpp"
 #include "depthai/device/Device.hpp"
 #include "depthai/pipeline/Pipeline.hpp"
+#include "depthai/pipeline/node/IMU.hpp"
 #include "depthai/pipeline/node/MonoCamera.hpp"
 #include "depthai/pipeline/node/StereoDepth.hpp"
 #include "depthai/pipeline/node/XLinkOut.hpp"
 #include "depthai_bridge/BridgePublisher.hpp"
 #include "depthai_bridge/DisparityConverter.hpp"
 #include "depthai_bridge/ImageConverter.hpp"
+#include "depthai_bridge/ImuConverter.hpp"
 #include "depthai/pipeline/node/ColorCamera.hpp"
 
 std::vector<std::string> usbStrings = {"UNKNOWN", "LOW", "FULL", "HIGH", "SUPER", "SUPER_PLUS"};
@@ -64,6 +67,25 @@ std::tuple<dai::Pipeline, int, int, int, int> createPipeline(
   dai::ColorCameraProperties::SensorResolution colorResolution =
     dai::ColorCameraProperties::SensorResolution::THE_1080_P;
   int stereoWidth = 640, stereoHeight = 480, rgbWidth = 1920, rgbHeight = 1080;
+
+
+  // ------------------------------
+  // IMU
+  // ------------------------------
+
+  // Creates node for IMU and XLink output connection
+  std::shared_ptr<dai::node::IMU> imu = pipeline.create<dai::node::IMU>();
+  std::shared_ptr<dai::node::XLinkOut> xoutImu = pipeline.create<dai::node::XLinkOut>();
+  xoutImu->setStreamName("imu");
+
+  // Configures IMU node
+  imu->enableIMUSensor(dai::IMUSensor::ACCELEROMETER_RAW, 500);
+  imu->enableIMUSensor(dai::IMUSensor::GYROSCOPE_RAW, 400);
+  imu->setBatchReportThreshold(5);
+  imu->setMaxBatchReports(20);  // Get one message only for now.
+
+  // Links IMU to its XLink output
+  imu->out.link(xoutImu->input);
 
 
   // ------------------------------
@@ -232,8 +254,12 @@ int main(int argc, char ** argv)
         lrcheck, extended, subpixel, confidence, LRchecktresh, use_depth, use_disparity,
     use_lr_raw);
 
-  // Initialize DepthAI device with configured pipeline
-  dai::Device device(pipeline);
+  // Initialize DepthAI devices with configured pipeline
+  auto deviceInfoVec = dai::Device::getAnyAvailableDevice();
+  RCLCPP_INFO(node->get_logger(), "Camera detected: %d", std::get<0>(deviceInfoVec));
+
+  // Creates a DepthAI device with the pipeline and device information
+  dai::Device device(pipeline, std::get<1>(deviceInfoVec));
 
   // Reads calibration data from the device
   auto calibrationHandler = device.readCalibration();
@@ -241,6 +267,9 @@ int main(int argc, char ** argv)
   // Show configuration
   RCLCPP_INFO(node->get_logger(), "-------------------------------");
   RCLCPP_INFO(node->get_logger(), "System Information:");
+  RCLCPP_INFO(node->get_logger(), "- Device Name: %s",
+    calibrationHandler.getEepromData().boardName.c_str());
+  RCLCPP_INFO(node->get_logger(), "- Device MxID : %s", device.getMxId().c_str());
   RCLCPP_INFO(node->get_logger(), "- Device USB status: %s",
       usbStrings[static_cast<int32_t>(device.getUsbSpeed())].c_str());
 
@@ -410,6 +439,27 @@ int main(int argc, char ** argv)
 
     dispPublish->addPublisherCallback();
   }
+
+
+  // IMU
+  dai::ros::ImuSyncMethod imuMode = static_cast<dai::ros::ImuSyncMethod>(1);
+  dai::rosBridge::ImuConverter imuConverter(tfPrefix + "_imu_frame", imuMode, 0.0, 0.02);
+  auto imuQueue = device.getOutputQueue("imu", 30, false);
+
+  std::unique_ptr<dai::rosBridge::BridgePublisher<sensor_msgs::msg::Imu,
+    dai::IMUData>> imuPublish = std::make_unique<dai::rosBridge::BridgePublisher<sensor_msgs::msg::Imu,
+      dai::IMUData>>(
+      imuQueue,
+      node,
+      std::string("imu"),
+      std::bind(&dai::rosBridge::ImuConverter::toRosMsg, &imuConverter, std::placeholders::_1,
+    std::placeholders::_2),
+      30,
+      "",
+      "imu");
+
+  imuPublish->addPublisherCallback();
+
 
   // Spins the node
   rclcpp::spin(node);
