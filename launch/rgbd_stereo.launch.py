@@ -40,7 +40,7 @@ def generate_launch_description():
     use_pointcloud  = LaunchConfiguration('use_pointcloud', default = True)
     pc_color        = LaunchConfiguration('pc_color',       default = True)
     only_rgb        = LaunchConfiguration('only_rgb',       default = False)
-    use_base       = LaunchConfiguration('use_base',       default = False)
+    use_base        = LaunchConfiguration('use_base',       default = False)
 
 
     declare_camera_model_cmd = DeclareLaunchArgument(
@@ -152,7 +152,7 @@ def generate_launch_description():
         'only_rgb',
         default_value=only_rgb,
         description='Use only RGB image.')
-    
+
     declare_use_base_cmd = DeclareLaunchArgument(
         'use_base',
         default_value=use_base,
