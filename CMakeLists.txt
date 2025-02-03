@@ -66,12 +66,14 @@ macro(dai_add_node_ros2 node_name node_src)
 endmacro()
 
 dai_add_node_ros2(rgbd_stereo_node src/rgbd_stereo_publisher.cpp)
+dai_add_node_ros2(stereo_publisher src/stereo_publisher.cpp)
 
 install(DIRECTORY rviz DESTINATION share/${PROJECT_NAME})
 install(DIRECTORY launch DESTINATION share/${PROJECT_NAME})
 
 install(TARGETS
   rgbd_stereo_node
+  stereo_publisher
   DESTINATION lib/${PROJECT_NAME})
 
 ament_package()

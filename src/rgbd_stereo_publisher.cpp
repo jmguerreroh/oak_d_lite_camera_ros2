@@ -60,10 +60,10 @@ std::tuple<dai::Pipeline, int, int, int, int> createPipeline(
 
   // Sets the resolution for the mono cameras and RGB camera
   dai::node::MonoCamera::Properties::SensorResolution monoResolution =
-    dai::node::MonoCamera::Properties::SensorResolution::THE_480_P;
+    dai::node::MonoCamera::Properties::SensorResolution::THE_400_P;
   dai::ColorCameraProperties::SensorResolution colorResolution =
     dai::ColorCameraProperties::SensorResolution::THE_1080_P;
-  int stereoWidth = 640, stereoHeight = 480, rgbWidth = 1920, rgbHeight = 1080;
+  int stereoWidth = 640, stereoHeight = 400, rgbWidth = 1920, rgbHeight = 1080;
 
 
   // ------------------------------
@@ -114,13 +114,14 @@ std::tuple<dai::Pipeline, int, int, int, int> createPipeline(
     // Mono camera configuration (left and right)
     monoLeft->setResolution(monoResolution);
     monoLeft->setBoardSocket(dai::CameraBoardSocket::CAM_B); // Sets camera socket
-    monoLeft->setFps(40);   // Sets FPS
+    monoLeft->setFps(120);   // Sets FPS
     monoRight->setResolution(monoResolution);
     monoRight->setBoardSocket(dai::CameraBoardSocket::CAM_C);
-    monoRight->setFps(40);
+    monoRight->setFps(120);
 
     // Stereo depth node configuration
-    stereo->initialConfig.setConfidenceThreshold(confidence); // Confidence threshold
+    //stereo->initialConfig.setMedianFilter(dai::MedianFilter::KERNEL_5x5);
+    //stereo->initialConfig.setConfidenceThreshold(confidence); // Confidence threshold
     stereo->setRectifyEdgeFillColor(0); // Black edge fill color for better cropping view
     stereo->initialConfig.setLeftRightCheckThreshold(LRchecktresh);
     stereo->setLeftRightCheck(lrcheck); // Enable/disable left-right check
@@ -196,7 +197,7 @@ int main(int argc, char ** argv)
   node->declare_parameter("tf_prefix", "oak");
   node->declare_parameter("lrcheck", true);
   node->declare_parameter("extended", false);
-  node->declare_parameter("subpixel", true);
+  node->declare_parameter("subpixel", false);
   node->declare_parameter("confidence", 200);
   node->declare_parameter("LRchecktresh", 5);
   node->declare_parameter("use_depth", true);
@@ -381,7 +382,7 @@ int main(int argc, char ** argv)
 
   if (use_depth) {
     // Converts and publishes depth image to ROS
-    auto stereoQueue = device.getOutputQueue("depth", 30, false);
+    auto stereoQueue = device.getOutputQueue("depth", 1000, false);
     depthPublish = std::make_unique<dai::rosBridge::BridgePublisher<sensor_msgs::msg::Image,
         dai::ImgFrame>>(
       stereoQueue,
@@ -392,7 +393,7 @@ int main(int argc, char ** argv)
                                         // and image type is also same we can reuse it
                       std::placeholders::_1,
                       std::placeholders::_2),
-      30,
+      1000,
       depthCameraInfo,
       "stereo");
 
@@ -401,7 +402,7 @@ int main(int argc, char ** argv)
 
   if (use_disparity) {
     // Converts and publishes disparity image to ROS
-    auto stereoQueueDisp = device.getOutputQueue("disparity", 30, false);
+    auto stereoQueueDisp = device.getOutputQueue("disparity", 1000, false);
     dispPublish = std::make_unique<dai::rosBridge::BridgePublisher<stereo_msgs::msg::DisparityImage,
         dai::ImgFrame>>(
       stereoQueueDisp,
