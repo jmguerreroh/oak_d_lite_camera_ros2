@@ -20,9 +20,12 @@
 #include "depthai_bridge/DisparityConverter.hpp"
 #include "depthai_bridge/ImageConverter.hpp"
 
+std::vector<std::string> usbStrings = {"UNKNOWN", "LOW", "FULL", "HIGH", "SUPER", "SUPER_PLUS"};
+
 std::tuple<dai::Pipeline, int, int> createPipeline(
     bool withDepth, bool lrcheck, bool extended, bool subpixel, int confidence, int LRchecktresh, std::string resolution) {
     dai::Pipeline pipeline;
+    pipeline.setXLinkChunkSize(0);
     dai::node::MonoCamera::Properties::SensorResolution monoResolution;
     auto monoLeft = pipeline.create<dai::node::MonoCamera>();
     auto monoRight = pipeline.create<dai::node::MonoCamera>();
@@ -110,7 +113,7 @@ int main(int argc, char** argv) {
     node->declare_parameter("subpixel", true);
     node->declare_parameter("confidence", 200);
     node->declare_parameter("LRchecktresh", 5);
-    node->declare_parameter("monoResolution", "720p");
+    node->declare_parameter("monoResolution", "400p");
 
     node->get_parameter("tf_prefix", tfPrefix);
     node->get_parameter("mode", mode);
@@ -130,6 +133,18 @@ int main(int argc, char** argv) {
     std::tie(pipeline, monoWidth, monoHeight) = createPipeline(enableDepth, lrcheck, extended, subpixel, confidence, LRchecktresh, monoResolution);
     auto deviceInfoVec = dai::Device::getAnyAvailableDevice();
     dai::Device device(pipeline, std::get<1>(deviceInfoVec));
+
+    // Show configuration
+    RCLCPP_INFO(node->get_logger(), "-------------------------------");
+    RCLCPP_INFO(node->get_logger(), "System Information:");
+    RCLCPP_INFO(node->get_logger(), "- Device MxID : %s", device.getMxId().c_str());
+    RCLCPP_INFO(node->get_logger(), "- Device USB status: %s",
+        usbStrings[static_cast<int32_t>(device.getUsbSpeed())].c_str());
+
+    RCLCPP_INFO(node->get_logger(), "- Color resolution: %dx%d", monoWidth, monoHeight);
+    RCLCPP_INFO(node->get_logger(), "- RGB camera activated");
+    RCLCPP_INFO(node->get_logger(), "-------------------------------");
+
     auto leftQueue = device.getOutputQueue("left", 30, false);
     auto rightQueue = device.getOutputQueue("right", 30, false);
     std::shared_ptr<dai::DataOutputQueue> stereoQueue;
@@ -202,5 +217,6 @@ int main(int argc, char** argv) {
         dispPublish.addPublisherCallback();
         rclcpp::spin(node);
     }
+
     return 0;
 }

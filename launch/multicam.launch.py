@@ -238,9 +238,9 @@ def generate_launch_description():
                         {'monoResolution': '400p'}])
 
     #delayed_rgbd_stereo_node2 = RegisterEventHandler(OnProcessStart(target_action=rgbd_stereo_node,on_start=[LogInfo(msg='Turtlesim started, spawning turtle'),rgbd_stereo_node2]))
-    delayed_rgbd_stereo_node2 = TimerAction(period=3.0, actions=[rgbd_stereo_node2])
-    delayed_rgbd_stereo_node3 = TimerAction(period=6.0, actions=[rgbd_stereo_node3])
-    delayed_rgbd_stereo_node4 = TimerAction(period=9.0, actions=[rgbd_stereo_node4])
+    delayed_rgbd_stereo_node2 = TimerAction(period=7.0, actions=[rgbd_stereo_node2])
+    delayed_rgbd_stereo_node3 = TimerAction(period=14.0, actions=[rgbd_stereo_node3])
+    delayed_rgbd_stereo_node4 = TimerAction(period=21.0, actions=[rgbd_stereo_node4])
 
     rviz_node = launch_ros.actions.Node(
             package='rviz2', executable='rviz2', output='screen',
