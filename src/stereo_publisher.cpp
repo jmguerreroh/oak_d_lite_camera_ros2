@@ -29,14 +29,10 @@ std::tuple<dai::Pipeline, int, int> createPipeline(
     dai::node::MonoCamera::Properties::SensorResolution monoResolution;
     auto monoLeft = pipeline.create<dai::node::MonoCamera>();
     auto monoRight = pipeline.create<dai::node::MonoCamera>();
-    auto xoutLeft = pipeline.create<dai::node::XLinkOut>();
-    auto xoutRight = pipeline.create<dai::node::XLinkOut>();
     auto stereo = pipeline.create<dai::node::StereoDepth>();
     auto xoutDepth = pipeline.create<dai::node::XLinkOut>();
 
     // XLinkOut
-    xoutLeft->setStreamName("left");
-    xoutRight->setStreamName("right");
 
     if(withDepth) {
         xoutDepth->setStreamName("depth");
@@ -79,13 +75,12 @@ std::tuple<dai::Pipeline, int, int> createPipeline(
     stereo->setLeftRightCheck(lrcheck);
     stereo->setExtendedDisparity(extended);
     stereo->setSubpixel(subpixel);
+    monoLeft->setFps(120);
+    monoRight->setFps(120);
 
     // Link plugins CAM -> STEREO -> XLINK
     monoLeft->out.link(stereo->left);
     monoRight->out.link(stereo->right);
-
-    stereo->rectifiedLeft.link(xoutLeft->input);
-    stereo->rectifiedRight.link(xoutRight->input);
 
     if(withDepth) {
         stereo->depth.link(xoutDepth->input);
@@ -145,13 +140,11 @@ int main(int argc, char** argv) {
     RCLCPP_INFO(node->get_logger(), "- RGB camera activated");
     RCLCPP_INFO(node->get_logger(), "-------------------------------");
 
-    auto leftQueue = device.getOutputQueue("left", 30, false);
-    auto rightQueue = device.getOutputQueue("right", 30, false);
     std::shared_ptr<dai::DataOutputQueue> stereoQueue;
     if(enableDepth) {
-        stereoQueue = device.getOutputQueue("depth", 30, false);
+        stereoQueue = device.getOutputQueue("depth", 240, false);
     } else {
-        stereoQueue = device.getOutputQueue("disparity", 30, false);
+        stereoQueue = device.getOutputQueue("disparity", 240, false);
     }
 
     auto calibrationHandler = device.readCalibration();
@@ -162,32 +155,8 @@ int main(int argc, char** argv) {
         monoHeight = 480;
     }
 
-    dai::rosBridge::ImageConverter converter(tfPrefix + "_left_camera_optical_frame", true);
-    auto leftCameraInfo = converter.calibrationToCameraInfo(calibrationHandler, dai::CameraBoardSocket::CAM_B, monoWidth, monoHeight);
-    dai::rosBridge::BridgePublisher<sensor_msgs::msg::Image, dai::ImgFrame> leftPublish(
-        leftQueue,
-        node,
-        std::string("left/image_rect"),
-        std::bind(&dai::rosBridge::ImageConverter::toRosMsg, &converter, std::placeholders::_1, std::placeholders::_2),
-        30,
-        leftCameraInfo,
-        "left");
-
-    leftPublish.addPublisherCallback();
-
     dai::rosBridge::ImageConverter rightconverter(tfPrefix + "_right_camera_optical_frame", true);
-    auto rightCameraInfo = converter.calibrationToCameraInfo(calibrationHandler, dai::CameraBoardSocket::CAM_C, monoWidth, monoHeight);
-
-    dai::rosBridge::BridgePublisher<sensor_msgs::msg::Image, dai::ImgFrame> rightPublish(
-        rightQueue,
-        node,
-        std::string("right/image_rect"),
-        std::bind(&dai::rosBridge::ImageConverter::toRosMsg, &rightconverter, std::placeholders::_1, std::placeholders::_2),
-        30,
-        rightCameraInfo,
-        "right");
-
-    rightPublish.addPublisherCallback();
+    auto rightCameraInfo = rightconverter.calibrationToCameraInfo(calibrationHandler, dai::CameraBoardSocket::CAM_C, monoWidth, monoHeight);
 
     if(mode == "depth") {
         dai::rosBridge::BridgePublisher<sensor_msgs::msg::Image, dai::ImgFrame> depthPublish(
@@ -199,7 +168,7 @@ int main(int argc, char** argv) {
                                         // and image type is also same we can reuse it
                       std::placeholders::_1,
                       std::placeholders::_2),
-            30,
+            240,
             rightCameraInfo,
             "stereo");
         depthPublish.addPublisherCallback();
@@ -211,11 +180,16 @@ int main(int argc, char** argv) {
             node,
             std::string("stereo/disparity"),
             std::bind(&dai::rosBridge::DisparityConverter::toRosMsg, &dispConverter, std::placeholders::_1, std::placeholders::_2),
-            30,
+            240,
             rightCameraInfo,
             "stereo");
         dispPublish.addPublisherCallback();
-        rclcpp::spin(node);
+        
+        rclcpp::Rate rate(240); // 🚀 Ejecutar a 10 Hz
+        while (rclcpp::ok()) {
+            rclcpp::spin_some(node->get_node_base_interface()); // 🚀 Ejecuta callbacks disponibles
+            rate.sleep(); // 🚀 Controla la frecuencia
+        }
     }
 
     return 0;

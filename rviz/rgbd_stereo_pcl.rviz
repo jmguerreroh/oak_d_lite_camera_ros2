@@ -7,6 +7,9 @@ Panels:
         - /Global Options1
         - /Status1
         - /PointCloud21
+        - /TF1
+        - /TF1/Frames1
+        - /TF1/Tree1
       Splitter Ratio: 0.5
     Tree Height: 259
   - Class: rviz_common/Selection
@@ -148,9 +151,9 @@ Visualization Manager:
       Enabled: true
       Invert Rainbow: false
       Max Color: 255; 255; 255
-      Max Intensity: 65.53500366210938
+      Max Intensity: 38.54999923706055
       Min Color: 0; 0; 0
-      Min Intensity: 0
+      Min Intensity: -66.53500366210938
       Name: PointCloud2
       Position Transformer: XYZ
       Selectable: true
@@ -166,10 +169,131 @@ Visualization Manager:
       Use Fixed Frame: true
       Use rainbow: true
       Value: true
+    - Class: rviz_default_plugins/TF
+      Enabled: true
+      Filter (blacklist): ""
+      Filter (whitelist): ""
+      Frame Timeout: 15
+      Frames:
+        All Enabled: false
+        base_chassis:
+          Value: false
+        base_footprint:
+          Value: false
+        base_link:
+          Value: true
+        oak1-d-base-frame:
+          Value: true
+        oak1-d_frame:
+          Value: false
+        oak1_left_camera_frame:
+          Value: false
+        oak1_left_camera_optical_frame:
+          Value: false
+        oak1_model_origin:
+          Value: false
+        oak1_rgb_camera_frame:
+          Value: false
+        oak1_rgb_camera_optical_frame:
+          Value: false
+        oak1_right_camera_frame:
+          Value: false
+        oak1_right_camera_optical_frame:
+          Value: false
+        oak2-d-base-frame:
+          Value: true
+        oak2-d_frame:
+          Value: false
+        oak2_left_camera_frame:
+          Value: false
+        oak2_left_camera_optical_frame:
+          Value: false
+        oak2_model_origin:
+          Value: false
+        oak2_rgb_camera_frame:
+          Value: false
+        oak2_rgb_camera_optical_frame:
+          Value: false
+        oak2_right_camera_frame:
+          Value: false
+        oak2_right_camera_optical_frame:
+          Value: false
+        oak3-d-base-frame:
+          Value: true
+        oak3-d_frame:
+          Value: false
+        oak3_left_camera_frame:
+          Value: false
+        oak3_left_camera_optical_frame:
+          Value: false
+        oak3_model_origin:
+          Value: false
+        oak3_rgb_camera_frame:
+          Value: false
+        oak3_rgb_camera_optical_frame:
+          Value: false
+        oak3_right_camera_frame:
+          Value: false
+        oak3_right_camera_optical_frame:
+          Value: false
+        oak4-d-base-frame:
+          Value: true
+      Marker Scale: 1
+      Name: TF
+      Show Arrows: true
+      Show Axes: true
+      Show Names: true
+      Tree:
+        base_link:
+          base_footprint:
+            base_chassis:
+              oak1-d-base-frame:
+                oak1-d_frame:
+                  oak1_left_camera_frame:
+                    oak1_left_camera_optical_frame:
+                      {}
+                  oak1_model_origin:
+                    {}
+                  oak1_rgb_camera_frame:
+                    oak1_rgb_camera_optical_frame:
+                      {}
+                  oak1_right_camera_frame:
+                    oak1_right_camera_optical_frame:
+                      {}
+              oak2-d-base-frame:
+                oak2-d_frame:
+                  oak2_left_camera_frame:
+                    oak2_left_camera_optical_frame:
+                      {}
+                  oak2_model_origin:
+                    {}
+                  oak2_rgb_camera_frame:
+                    oak2_rgb_camera_optical_frame:
+                      {}
+                  oak2_right_camera_frame:
+                    oak2_right_camera_optical_frame:
+                      {}
+              oak3-d-base-frame:
+                oak3-d_frame:
+                  oak3_left_camera_frame:
+                    oak3_left_camera_optical_frame:
+                      {}
+                  oak3_model_origin:
+                    {}
+                  oak3_rgb_camera_frame:
+                    oak3_rgb_camera_optical_frame:
+                      {}
+                  oak3_right_camera_frame:
+                    oak3_right_camera_optical_frame:
+                      {}
+              oak4-d-base-frame:
+                {}
+      Update Interval: 0
+      Value: true
   Enabled: true
   Global Options:
     Background Color: 48; 48; 48
-    Fixed Frame: oak1_right_camera_optical_frame
+    Fixed Frame: base_link
     Frame Rate: 30
   Name: root
   Tools:
@@ -210,7 +334,7 @@ Visualization Manager:
   Views:
     Current:
       Class: rviz_default_plugins/Orbit
-      Distance: 5.273627281188965
+      Distance: 6.415480613708496
       Enable Stereo Rendering:
         Stereo Eye Separation: 0.05999999865889549
         Stereo Focal Distance: 1
@@ -225,10 +349,10 @@ Visualization Manager:
       Invert Z Axis: false
       Name: Current View
       Near Clip Distance: 0.009999999776482582
-      Pitch: 0.6297970414161682
+      Pitch: 0.5647969841957092
       Target Frame: <Fixed Frame>
       Value: Orbit (rviz_default_plugins)
-      Yaw: 3.1803972721099854
+      Yaw: 4.545397758483887
     Saved: ~
 Window Geometry:
   Displays:
