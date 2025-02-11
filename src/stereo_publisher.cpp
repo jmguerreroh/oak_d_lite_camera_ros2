@@ -95,7 +95,7 @@ int main(int argc, char** argv) {
     rclcpp::init(argc, argv);
     auto node = rclcpp::Node::make_shared("stereo_node");
 
-    std::string tfPrefix, mode, monoResolution;
+    std::string tfPrefix, mode, monoResolution, cam_id;
     bool lrcheck, extended, subpixel, enableDepth;
     int confidence, LRchecktresh;
     int monoWidth, monoHeight;
@@ -109,6 +109,8 @@ int main(int argc, char** argv) {
     node->declare_parameter("confidence", 200);
     node->declare_parameter("LRchecktresh", 5);
     node->declare_parameter("monoResolution", "400p");
+    node->declare_parameter("cam_id", "False");
+
 
     node->get_parameter("tf_prefix", tfPrefix);
     node->get_parameter("mode", mode);
@@ -118,6 +120,7 @@ int main(int argc, char** argv) {
     node->get_parameter("confidence", confidence);
     node->get_parameter("LRchecktresh", LRchecktresh);
     node->get_parameter("monoResolution", monoResolution);
+    node->get_parameter("cam_id", cam_id);
 
     if(mode == "depth") {
         enableDepth = true;
@@ -126,7 +129,13 @@ int main(int argc, char** argv) {
     }
 
     std::tie(pipeline, monoWidth, monoHeight) = createPipeline(enableDepth, lrcheck, extended, subpixel, confidence, LRchecktresh, monoResolution);
-    auto deviceInfoVec = dai::Device::getAnyAvailableDevice();
+    std::tuple<bool, dai::DeviceInfo> deviceInfoVec;
+    
+    if(cam_id == std::string("f")){
+        deviceInfoVec = dai::Device::getAnyAvailableDevice();
+    }else{
+        deviceInfoVec = dai::Device::getDeviceByMxId(cam_id) ;
+    }
     dai::Device device(pipeline, std::get<1>(deviceInfoVec));
 
     // Show configuration
@@ -185,10 +194,10 @@ int main(int argc, char** argv) {
             "stereo");
         dispPublish.addPublisherCallback();
         
-        rclcpp::Rate rate(240); // 🚀 Ejecutar a 10 Hz
+        rclcpp::Rate rate(240);
         while (rclcpp::ok()) {
-            rclcpp::spin_some(node->get_node_base_interface()); // 🚀 Ejecuta callbacks disponibles
-            rate.sleep(); // 🚀 Controla la frecuencia
+            rclcpp::spin_some(node->get_node_base_interface());
+            rate.sleep();
         }
     }
 

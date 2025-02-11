@@ -38,6 +38,11 @@ def generate_launch_description():
     LRchecktresh    = LaunchConfiguration('LRchecktresh',   default = 5)
     use_rviz        = LaunchConfiguration('use_rviz',       default = True)
 
+    #cam1_id        = LaunchConfiguration('cam1_id',       default = 'f')  # if you change f to false python use bool instead of string (xd)
+    cam1_id        = LaunchConfiguration('cam1_id',       default = '1844301001B0E80F00') # central camera
+    cam2_id        = LaunchConfiguration('cam2_id',       default = '1844301031BCEB0F00')
+    cam3_id        = LaunchConfiguration('cam3_id',       default = '18443010D149EC0F00')
+
     declare_camera_model_cmd = DeclareLaunchArgument(
         'camera_model',
         default_value=camera_model,
@@ -128,6 +133,21 @@ def generate_launch_description():
         default_value=use_rviz,
         description='When True create a RVIZ window.')
 
+    declare_cam1_id_cmd = DeclareLaunchArgument(
+        'cam1_id',
+        default_value=cam1_id,
+        description='serach for cam with required id')
+
+    declare_cam2_id_cmd = DeclareLaunchArgument(
+        'cam2_id',
+        default_value=cam2_id,
+        description='serach for cam with required id')
+
+    declare_cam3_id_cmd = DeclareLaunchArgument(
+        'cam3_id',
+        default_value=cam3_id,
+        description='serach for cam with required id')
+
     urdf_launch1 = IncludeLaunchDescription(
                             launch_description_sources.PythonLaunchDescriptionSource(
                                     os.path.join(urdf_launch_dir, 'urdf_launch.py')),
@@ -153,7 +173,8 @@ def generate_launch_description():
                         {'confidence': confidence},
                         {'LRchecktresh': LRchecktresh},
                         {'mode': 'depth'},
-                        {'monoResolution': '400p'}])
+                        {'monoResolution': '400p'},
+                        {'cam_id': cam1_id}])
 
 
     urdf_launch2 = IncludeLaunchDescription(
@@ -181,7 +202,8 @@ def generate_launch_description():
                         {'confidence': confidence},
                         {'LRchecktresh': LRchecktresh},
                         {'mode': 'depth'},
-                        {'monoResolution': '400p'}])
+                        {'monoResolution': '400p'},
+                        {'cam_id': cam2_id}])
 
     urdf_launch3 = IncludeLaunchDescription(
                             launch_description_sources.PythonLaunchDescriptionSource(
@@ -208,7 +230,8 @@ def generate_launch_description():
                         {'confidence': confidence},
                         {'LRchecktresh': LRchecktresh},
                         {'mode': 'depth'},
-                        {'monoResolution': '400p'}])
+                        {'monoResolution': '400p'},
+                        {'cam_id': cam3_id}])
 
     urdf_launch4 = IncludeLaunchDescription(
                             launch_description_sources.PythonLaunchDescriptionSource(
@@ -235,7 +258,8 @@ def generate_launch_description():
                         {'confidence': confidence},
                         {'LRchecktresh': LRchecktresh},
                         {'mode': 'depth'},
-                        {'monoResolution': '400p'}])
+                        {'monoResolution': '400p'},
+                        {'cam_id': cam3_id}])
 
     #delayed_rgbd_stereo_node2 = RegisterEventHandler(OnProcessStart(target_action=rgbd_stereo_node,on_start=[LogInfo(msg='Turtlesim started, spawning turtle'),rgbd_stereo_node2]))
     delayed_rgbd_stereo_node2 = TimerAction(period=7.0, actions=[rgbd_stereo_node2])
@@ -270,6 +294,10 @@ def generate_launch_description():
     ld.add_action(declare_confidence_cmd)
     ld.add_action(declare_LRchecktresh_cmd)
     ld.add_action(declare_use_rviz_cmd)
+    ld.add_action(declare_cam1_id_cmd)
+    ld.add_action(declare_cam2_id_cmd)
+    ld.add_action(declare_cam3_id_cmd)
+
 
     ld.add_action(urdf_launch1)
     ld.add_action(rgbd_stereo_node)
