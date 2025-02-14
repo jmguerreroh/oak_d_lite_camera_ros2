@@ -39,9 +39,9 @@ def generate_launch_description():
     use_rviz        = LaunchConfiguration('use_rviz',       default = True)
 
     #cam1_id        = LaunchConfiguration('cam1_id',       default = 'f')  # if you change f to false python use bool instead of string (xd)
-    cam1_id        = LaunchConfiguration('cam1_id',       default = '1844301001B0E80F00') # central camera
-    cam2_id        = LaunchConfiguration('cam2_id',       default = '1844301031BCEB0F00')
-    cam3_id        = LaunchConfiguration('cam3_id',       default = '18443010D149EC0F00')
+    cam1_id        = LaunchConfiguration('cam1_id',       default = '184430108194C90F00') # middle camera
+    cam2_id        = LaunchConfiguration('cam2_id',       default = '18443010419EC90F00')
+    cam3_id        = LaunchConfiguration('cam3_id',       default = '1844301031B9EB0F00') # right cam
 
     declare_camera_model_cmd = DeclareLaunchArgument(
         'camera_model',
